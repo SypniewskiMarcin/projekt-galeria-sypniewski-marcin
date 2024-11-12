@@ -22,9 +22,6 @@ body {
   color: white;
   text-align: center;
   padding: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
 
 .App-header h1 {
@@ -118,67 +115,4 @@ body {
   .App-footer {
     padding: 15px;
   }
-}
-
-
-/* Styl logowania */
-.login-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  margin: 20px auto;
-  max-width: 400px;
-}
-
-.login-container h2 {
-  font-size: 1.8em;
-  color: #333;
-  margin-bottom: 20px;
-}
-
-.login-button {
-  background-color: #4285f4;
-  color: white;
-  border: none;
-  padding: 15px 30px;
-  border-radius: 4px;
-  font-size: 1em;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  width: 100%;
-}
-
-.login-button:hover {
-  background-color: #357ae8;
-}
-
-.error-message {
-  color: red;
-  margin-top: 10px;
-  font-size: 0.9em;
-  text-align: center;
-}
-
-/* Styl przycisku wylogowania */
-.logout-button {
-  background: none;
-  border: none;
-  color: white;
-  font-size: 1.2em;
-  cursor: pointer;
-  transition: color 0.3s ease;
-}
-
-.logout-button:hover {
-  color: #f44336;
-}
-
-/* Ikona w przycisku */
-.logout-button i {
-  margin-left: 5px;
 }

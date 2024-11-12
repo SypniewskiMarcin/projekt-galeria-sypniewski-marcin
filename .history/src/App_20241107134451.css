@@ -22,9 +22,6 @@ body {
   color: white;
   text-align: center;
   padding: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
 
 .App-header h1 {
@@ -35,8 +32,7 @@ body {
 /* Styl galerii */
 .gallery {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  /* Zwiększono minimalną szerokość kafelka o 30% */
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 10px;
   padding: 20px;
   grid-auto-rows: 1fr;
@@ -51,7 +47,6 @@ body {
   transition: transform 0.3s;
   position: relative;
   padding-bottom: 100%;
-  /* Zmiana wysokości na 100% dla proporcji 1:1 */
 }
 
 .gallery-item img {
@@ -83,8 +78,7 @@ body {
 /* Responsywność */
 @media (max-width: 1024px) {
   .gallery {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    /* Dostosowano do mniejszych ekranów */
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   }
 }
 
@@ -95,8 +89,7 @@ body {
 
   .gallery {
     gap: 8px;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    /* Dostosowanie rozmiarów na średnich ekranach */
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   }
 }
 
@@ -111,8 +104,7 @@ body {
 
   .gallery {
     gap: 5px;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    /* Jeszcze mniejsze kafelki na małych ekranach */
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   }
 
   .App-footer {
@@ -120,65 +112,75 @@ body {
   }
 }
 
+/* src/App.css
+.App {
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
 
-/* Styl logowania */
-.login-container {
+header {
+  background-color: #4CAF50;
+  padding: 20px;
+  color: white;
+}
+
+footer {
+  background-color: #222;
+  padding: 10px;
+  color: white;
+}
+
+.gallery {
+  padding: 20px;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.gallery-item {
+  background-color: #f4f4f4;
+  padding: 20px;
+  border: 1px solid #ccc;
+} */
+
+/* .App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  margin: 20px auto;
-  max-width: 400px;
-}
-
-.login-container h2 {
-  font-size: 1.8em;
-  color: #333;
-  margin-bottom: 20px;
-}
-
-.login-button {
-  background-color: #4285f4;
+  font-size: calc(10px + 2vmin);
   color: white;
-  border: none;
-  padding: 15px 30px;
-  border-radius: 4px;
-  font-size: 1em;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  width: 100%;
 }
 
-.login-button:hover {
-  background-color: #357ae8;
+.App-link {
+  color: #61dafb;
 }
 
-.error-message {
-  color: red;
-  margin-top: 10px;
-  font-size: 0.9em;
-  text-align: center;
-}
-
-/* Styl przycisku wylogowania */
-.logout-button {
-  background: none;
-  border: none;
-  color: white;
-  font-size: 1.2em;
-  cursor: pointer;
-  transition: color 0.3s ease;
-}
-
-.logout-button:hover {
-  color: #f44336;
-}
-
-/* Ikona w przycisku */
-.logout-button i {
-  margin-left: 5px;
-}
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+} */

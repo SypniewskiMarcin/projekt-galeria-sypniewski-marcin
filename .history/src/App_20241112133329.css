@@ -22,9 +22,6 @@ body {
   color: white;
   text-align: center;
   padding: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
 
 .App-header h1 {
@@ -166,19 +163,18 @@ body {
 
 /* Styl przycisku wylogowania */
 .logout-button {
-  background: none;
-  border: none;
+  background-color: #f44336;
+  /* Czerwony przycisk */
   color: white;
-  font-size: 1.2em;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 1em;
   cursor: pointer;
-  transition: color 0.3s ease;
+  margin-top: 20px;
+  transition: background-color 0.3s ease;
 }
 
 .logout-button:hover {
-  color: #f44336;
-}
-
-/* Ikona w przycisku */
-.logout-button i {
-  margin-left: 5px;
+  background-color: #d32f2f;
 }
