@@ -6,10 +6,6 @@ import Login from './components/Login';
 import { auth } from './firebaseConfig';
 import { onAuthStateChanged } from 'firebase/auth';
 import './App.css';
-import { library } from "@fortawesome/fontawesome-svg-core";
-import { faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
-
-library.add(faRightFromBracket);
 
 function App() {
   const [user, setUser] = useState(null);

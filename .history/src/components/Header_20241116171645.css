@@ -45,7 +45,3 @@
 .logout-button:hover .logout-icon {
     transform: scale(1.2);
 }
-
-.logout-button svg {
-    margin-left: 8px;
-}
