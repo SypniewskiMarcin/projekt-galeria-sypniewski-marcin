@@ -1,6 +1,7 @@
 // src/components/Gallery.js
 import React, { useState } from "react";
 import ImageModal from "./ImageModal";
+import "./Gallery.css";
 
 function Gallery() {
     const [selectedImage, setSelectedImage] = useState(null);

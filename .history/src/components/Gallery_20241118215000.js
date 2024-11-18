@@ -1,6 +1,6 @@
 // src/components/Gallery.js
-import React, { useState } from "react";
-import ImageModal from "./ImageModal";
+import React, { useState } from 'react';
+import ImageModal from './ImageModal';
 
 function Gallery() {
     const [selectedImage, setSelectedImage] = useState(null);
@@ -13,26 +13,24 @@ function Gallery() {
     }
 
     return (
-        <main>
-            <div className="gallery">
-                {images.map((image, index) => (
-                    <div
-                        key={index}
-                        className="gallery-item"
-                        onClick={() => setSelectedImage(image)}
-                    >
-                        <img src={image} alt={`Zdjęcie ${index + 1}`} />
-                    </div>
-                ))}
-            </div>
+        <div className="gallery-container">
+            {images.map((image, index) => (
+                <div
+                    key={index}
+                    className="gallery-item"
+                    onClick={() => setSelectedImage(image)}
+                >
+                    <img src={image} alt={`Zdjęcie ${index + 1}`} />
+                </div>
+            ))}
 
             {selectedImage && (
                 <ImageModal
-                    imageUrl={selectedImage}
+                    image={selectedImage}
                     onClose={() => setSelectedImage(null)}
                 />
             )}
-        </main>
+        </div>
     );
 }
 
