@@ -14,7 +14,7 @@
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/4.3.1/workbox-sw.js");
 
 importScripts(
-  "/projekt-galeria-sypniewski-marcin/precache-manifest.85215329887a1413b1fabf13b61117ab.js"
+  "/projekt-galeria-sypniewski-marcin/precache-manifest.9b767c9258a2465e35b6282926495a83.js"
 );
 
 self.addEventListener('message', (event) => {

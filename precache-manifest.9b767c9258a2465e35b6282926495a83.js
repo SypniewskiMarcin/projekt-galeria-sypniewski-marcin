@@ -1,10 +1,10 @@
 self.__precacheManifest = (self.__precacheManifest || []).concat([
   {
-    "revision": "a95f9a0a889c4edbdb6343f4064618a4",
+    "revision": "1bc13ef02ad4d448e4ed7f492968bf68",
     "url": "/projekt-galeria-sypniewski-marcin/index.html"
   },
   {
-    "revision": "a649dae79e054f0647dd",
+    "revision": "814cc33919b9a00d2c34",
     "url": "/projekt-galeria-sypniewski-marcin/static/css/main.c7e76994.chunk.css"
   },
   {
@@ -16,8 +16,8 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "/projekt-galeria-sypniewski-marcin/static/js/3.5d4f8254.chunk.js"
   },
   {
-    "revision": "a649dae79e054f0647dd",
-    "url": "/projekt-galeria-sypniewski-marcin/static/js/main.6e13afd2.chunk.js"
+    "revision": "814cc33919b9a00d2c34",
+    "url": "/projekt-galeria-sypniewski-marcin/static/js/main.5ea33e94.chunk.js"
   },
   {
     "revision": "7bf01f8b7937a48e66db",
