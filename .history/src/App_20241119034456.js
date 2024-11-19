@@ -8,8 +8,6 @@ import { onAuthStateChanged } from 'firebase/auth';
 import './App.css';
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { faRightFromBracket, faTimes, faChevronLeft, faChevronRight } from "@fortawesome/free-solid-svg-icons";
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from './firebaseConfig';
 
 library.add(faRightFromBracket, faTimes, faChevronLeft, faChevronRight);
 
@@ -18,23 +16,16 @@ function App() {
 
   useEffect(() => {
     // Sprawdzamy, czy użytkownik jest zalogowany
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        // Pobierz dane użytkownika z Firestore
-        const userRef = doc(db, 'users', currentUser.uid);
-        const userDoc = await getDoc(userRef);
-        setUser({ ...currentUser, role: userDoc.data().role }); // Ustaw użytkownika w stanie z rolą
-      } else {
-        setUser(null); // Ustaw użytkownika na null, jeśli brak
-      }
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser); // Ustawiamy użytkownika w stanie lub null, jeśli brak
     });
 
     // Zwracamy funkcję czyszczącą subskrypcję
     return () => unsubscribe();
   }, []);
 
-  const handleLoginSuccess = (userData) => {
-    setUser(userData); // Ustaw użytkownika po zalogowaniu
+  const handleLoginSuccess = () => {
+    setUser(auth.currentUser); // Ustaw użytkownika po zalogowaniu
   };
 
   return (
