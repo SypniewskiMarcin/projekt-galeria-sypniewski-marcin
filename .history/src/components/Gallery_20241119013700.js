@@ -1,7 +1,6 @@
 // src/components/Gallery.js
 import React, { useState, useEffect } from "react";
 import ImageModal from "./ImageModal";
-import Alert from "./Alert"; // Importuj komponent Alert
 import { storage, auth } from '../firebaseConfig'; // Importuj storage i auth
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import "./Gallery.css";
@@ -11,7 +10,6 @@ function Gallery() {
     const [images, setImages] = useState([]);
     const [uploadError, setUploadError] = useState('');
     const [selectedFile, setSelectedFile] = useState(null); // Stan do przechowywania wybranego pliku
-    const [alertMessage, setAlertMessage] = useState(''); // Stan do przechowywania komunikatu alertu
 
     // Generowanie tablicy obrazków o nazwach 1-29
     useEffect(() => {
@@ -45,9 +43,6 @@ function Gallery() {
             console.log('Uploaded a blob or file!', snapshot);
             // Po przesłaniu pliku, możesz od razu pobrać URL
             getFileUrl(file.name); // Wywołaj funkcję do pobierania URL
-            setAlertMessage('Plik wysłany pomyślnie!'); // Ustaw komunikat o sukcesie
-            setSelectedFile(null); // Wyczyść wybrane plik
-            document.getElementById('fileInput').value = ''; // Wyczyść pole input
         }).catch((error) => {
             console.error('Error uploading file:', error);
             setUploadError('Błąd przesyłania pliku. Spróbuj ponownie.'); // Ustaw komunikat o błędzie
@@ -96,9 +91,6 @@ function Gallery() {
                 </button>
                 {uploadError && <p className="error-message">{uploadError}</p>} {/* Wyświetl błąd, jeśli wystąpił */}
             </div>
-
-            {/* Wyświetl alert, jeśli jest komunikat */}
-            {alertMessage && <Alert message={alertMessage} onClose={() => setAlertMessage('')} />}
 
             <div className="gallery">
                 {images.map((image, index) => (

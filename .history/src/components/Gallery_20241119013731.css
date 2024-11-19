@@ -76,15 +76,3 @@
     background-color: #357ae8;
     /* Zmiana koloru tła przy najechaniu */
 }
-
-/* Styl komunikatu o sukcesie */
-.success-message {
-    color: green;
-    /* Kolor tekstu */
-    margin-top: 10px;
-    /* Odstęp od przycisku */
-    font-size: 16px;
-    /* Rozmiar czcionki */
-    text-align: center;
-    /* Wyśrodkowanie */
-}

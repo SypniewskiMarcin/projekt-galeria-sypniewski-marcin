@@ -4,7 +4,6 @@ import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getAnalytics } from "firebase/analytics";
 import { getStorage } from "firebase/storage";
 import { getFirestore } from "firebase/firestore";
-import { ref, uploadBytes } from 'firebase/storage';
 
 // Konfiguracja Firebase - skopiowana z Firebase Console
 const firebaseConfig = {
@@ -26,17 +25,6 @@ const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 const storage = getStorage(app);
 const db = getFirestore(app);
-
-const uploadFile = (file) => {
-    const userId = auth.currentUser.uid; // Pobierz userId z Firebase Authentication
-    const storageRef = ref(storage, `images/${userId}/${file.name}`);
-
-    uploadBytes(storageRef, file).then((snapshot) => {
-        console.log('Uploaded a blob or file!', snapshot);
-    }).catch((error) => {
-        console.error('Error uploading file:', error);
-    });
-};
 
 // Eksportowanie funkcji
 export { auth, provider, storage, db };
