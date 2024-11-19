@@ -1,0 +1,90 @@
+.gallery-item {
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    overflow: hidden;
+}
+
+.gallery-item:hover {
+    transform: scale(1.02);
+}
+
+.gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.2s ease;
+}
+
+.gallery-item:hover img {
+    transform: scale(1.05);
+}
+
+/* Styl kontenera dla inputa */
+.upload-container {
+    margin: 20px;
+    /* Odstęp od góry */
+    text-align: center;
+    /* Wyśrodkowanie */
+}
+
+/* Styl inputa */
+.file-input {
+    padding: 10px;
+    /* Wewnętrzny odstęp */
+    border: 2px solid #4285f4;
+    /* Kolor obramowania */
+    border-radius: 5px;
+    /* Zaokrąglenie rogów */
+    font-size: 16px;
+    /* Rozmiar czcionki */
+    cursor: pointer;
+    /* Kursor wskazujący */
+    transition: border-color 0.3s;
+    /* Płynna zmiana koloru obramowania */
+}
+
+/* Efekt hover dla inputa */
+.file-input:hover {
+    border-color: #357ae8;
+    /* Zmiana koloru obramowania przy najechaniu */
+}
+
+/* Styl przycisku */
+.upload-button {
+    margin-top: 10px;
+    /* Odstęp od inputa */
+    padding: 10px 20px;
+    /* Wewnętrzny odstęp */
+    background-color: #4285f4;
+    /* Kolor tła */
+    color: white;
+    /* Kolor tekstu */
+    border: none;
+    /* Bez obramowania */
+    border-radius: 5px;
+    /* Zaokrąglenie rogów */
+    font-size: 16px;
+    /* Rozmiar czcionki */
+    cursor: pointer;
+    /* Kursor wskazujący */
+    transition: background-color 0.3s;
+    /* Płynna zmiana koloru tła */
+}
+
+/* Efekt hover dla przycisku */
+.upload-button:hover {
+    background-color: #357ae8;
+    /* Zmiana koloru tła przy najechaniu */
+}
+
+/* Styl komunikatu o sukcesie */
+.success-message {
+    color: green;
+    /* Kolor tekstu */
+    margin-top: 10px;
+    /* Odstęp od przycisku */
+    font-size: 16px;
+    /* Rozmiar czcionki */
+    text-align: center;
+    /* Wyśrodkowanie */
+}

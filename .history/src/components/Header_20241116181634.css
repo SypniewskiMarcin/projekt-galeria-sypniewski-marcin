@@ -1,0 +1,51 @@
+/* src/components/Header.css */
+
+/* Styl nagłówka */
+.App-header {
+    background-color: #282c34;
+    color: white;
+    text-align: center;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.App-header h1 {
+    margin: 0;
+    font-size: 2.5em;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+/* Styl przycisku wylogowania */
+.logout-button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.2em;
+    cursor: pointer;
+    transition: color 0.3s ease;
+    display: flex;
+    align-items: center;
+}
+
+.logout-button:hover {
+    color: #f44336;
+}
+
+/* Ikona w przycisku */
+.logout-icon {
+    margin-left: 5px;
+    font-size: 1.4em;
+    transition: transform 0.3s ease;
+}
+
+/* Efekt na ikonie przy hoverze */
+.logout-button:hover .logout-icon {
+    transform: scale(1.2);
+}
+
+.logout-button svg {
+    margin-left: 8px;
+}
