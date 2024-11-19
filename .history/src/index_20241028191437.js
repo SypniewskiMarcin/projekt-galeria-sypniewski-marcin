@@ -15,18 +15,3 @@ root.render(
 // to log results (for example: reportWebVitals(console.log))
 // or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
 reportWebVitals();
-
-function applyTheme() {
-  const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  if (isDarkMode) {
-    document.body.classList.add('dark-mode');
-  } else {
-    document.body.classList.remove('dark-mode');
-  }
-}
-
-// Nasłuchuj zmian preferencji motywu
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
-
-// Zastosuj motyw przy pierwszym załadowaniu
-applyTheme();

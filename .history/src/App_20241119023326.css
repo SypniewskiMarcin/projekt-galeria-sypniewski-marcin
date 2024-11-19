@@ -119,27 +119,6 @@ body {
   }
 }
 
-/* Ciemny motyw */
-@media (prefers-color-scheme: dark) {
-  body {
-    background-color: #121212;
-    color: #e0e0e0;
-  }
-
-  .App-header {
-    background-color: #1e1e1e;
-  }
-
-  .gallery-item {
-    background-color: #2a2a2a;
-    border: 1px solid #444;
-  }
-
-  .App-footer {
-    background-color: #1e1e1e;
-  }
-}
-
 /* src/components/Login.css */
 
 /* Styl kontenera logowania */
