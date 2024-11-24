@@ -36,12 +36,8 @@ function App() {
     return () => unsubscribe();
   }, []);
 
-  const handleLoginSuccess = async (userData) => {
-    // Ustaw użytkownika po zalogowaniu
-    const userRef = doc(db, 'users', userData.uid);
-    const userDoc = await getDoc(userRef);
-    const role = userDoc.exists() ? userDoc.data().role : 'user'; // Domyślna rola
-    setUser({ ...userData, role }); // Ustaw użytkownika z rolą
+  const handleLoginSuccess = (userData) => {
+    setUser(userData); // Ustaw użytkownika po zalogowaniu
   };
 
   return (

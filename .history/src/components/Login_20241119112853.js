@@ -32,13 +32,11 @@ const Login = ({ onLoginSuccess }) => {
             const adminDoc = await getDoc(adminRef);
 
             // Sprawdź, czy dokument admin istnieje
-            let role = 'user'; // Domyślna rola
             if (adminDoc.exists()) {
                 const adminEmail = adminDoc.data().email;
 
                 if (user.email === adminEmail) {
                     // Użytkownik jest administratorem
-                    role = 'admin';
                     await setDoc(userRef, { role: 'admin' }, { merge: true });
                 }
             } else {
@@ -46,7 +44,7 @@ const Login = ({ onLoginSuccess }) => {
             }
 
             console.log('Zalogowano pomyślnie');
-            onLoginSuccess({ ...user, role }); // Przekaż dane użytkownika i rolę do callbacka
+            onLoginSuccess({ ...user, role: userDoc.data().role || 'user' }); // Przekaż dane użytkownika i rolę do callbacka
         } catch (error) {
             setError(error.message); // Ustaw komunikat o błędzie
             console.error('Błąd logowania:', error);
