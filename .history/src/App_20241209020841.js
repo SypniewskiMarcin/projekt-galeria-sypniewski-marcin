@@ -51,11 +51,9 @@ function App() {
       {!user ? (
         <Login onLoginSuccess={handleLoginSuccess} />
       ) : (
-        <>
-          <CreateAlbum />
-          <Gallery />
-        </>
+        <Gallery />
       )}
+      <CreateAlbum />
       <Footer />
     </div>
   );

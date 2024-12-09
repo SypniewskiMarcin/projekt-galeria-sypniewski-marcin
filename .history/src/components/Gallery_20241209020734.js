@@ -2,10 +2,10 @@
 import React, { useState, useEffect } from "react";
 import ImageModal from "./ImageModal";
 import Alert from "./Alert"; // Importuj komponent Alert
-import { storage, auth, db } from '../firebaseConfig'; // Importuj storage, auth i db
+import { storage, auth } from '../firebaseConfig'; // Importuj storage i auth
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
 import "./Gallery.css";
+import { collection, getDocs } from 'firebase/firestore';
 
 function Gallery() {
     const [selectedImageIndex, setSelectedImageIndex] = useState(null);
@@ -14,17 +14,16 @@ function Gallery() {
     const [selectedFile, setSelectedFile] = useState(null); // Stan do przechowywania wybranego pliku
     const [alertMessage, setAlertMessage] = useState(''); // Stan do przechowywania komunikatu alertu
     const [albums, setAlbums] = useState([]); // Stan do przechowywania albumów
-    const [selectedAlbumId, setSelectedAlbumId] = useState(null); // ID wybranego albumu
 
-    // // Generowanie tablicy obrazków o nazwach 1-29 ---- wczytywanie obrazkow z github
-    // useEffect(() => {
-    //     const imageArray = [];
-    //     for (let i = 1; i <= 29; i++) {
-    //         imageArray.push(
-    //             `https://raw.githubusercontent.com/SypniewskiMarcin/projekt-galeria-sypniewski-marcin/refs/heads/main/public/images/2024-11-05_fot_marcin-sypniewski_@pierwiastek-${i}.jpg`)
-    //     }
-    //     setImages(imageArray);
-    // }, []);
+    // Generowanie tablicy obrazków o nazwach 1-29
+    useEffect(() => {
+        const imageArray = [];
+        for (let i = 1; i <= 29; i++) {
+            imageArray.push(
+                `https://raw.githubusercontent.com/SypniewskiMarcin/projekt-galeria-sypniewski-marcin/refs/heads/main/public/images/2024-11-05_fot_marcin-sypniewski_@pierwiastek-${i}.jpg`)
+        }
+        setImages(imageArray);
+    }, []);
 
     useEffect(() => {
         const fetchAlbums = async () => {
@@ -50,35 +49,44 @@ function Gallery() {
     };
 
     // Funkcja do przesyłania plików
-    const uploadFile = async (file) => {
-        const userId = auth.currentUser.uid; // Pobierz userId z Firebase Authentication
-        const storageRef = ref(storage, `images/${userId}/${selectedAlbumId}/${file.name}`); // Dodaj albumId do ścieżki
+    const uploadFile = async (file, albumId) => {
+        const userId = auth.currentUser.uid;
+        const storageRef = ref(storage, `images/${userId}/${albumId}/${file.name}`); // Dodaj albumId do ścieżki
 
         try {
             await uploadBytes(storageRef, file);
             const url = await getDownloadURL(storageRef);
-            const albumRef = doc(db, 'albums', selectedAlbumId);
+            // Dodaj URL do albumu w Firestore
+            const albumRef = doc(db, 'albums', albumId);
             await updateDoc(albumRef, {
-                images: [...images, url] // Dodaj URL do tablicy zdjęć
+                images: arrayUnion(url) // Dodaj URL do tablicy zdjęć
             });
-            setAlertMessage('Plik wysłany pomyślnie!'); // Ustaw komunikat o sukcesie
-            setSelectedFile(null); // Wyczyść wybrane plik
-            document.getElementById('fileInput').value = ''; // Wyczyść pole input
+            setAlertMessage('Plik wysłany pomyślnie!');
         } catch (error) {
-            console.error('Error uploading file:', error);
-            setUploadError('Błąd przesyłania pliku. Spróbuj ponownie.'); // Ustaw komunikat o błędzie
+            console.error('Błąd przesyłania pliku:', error);
+            setUploadError('Błąd przesyłania pliku. Spróbuj ponownie.');
         }
+    };
+
+    // Funkcja do pobierania URL pliku
+    const getFileUrl = (fileName) => {
+        const userId = auth.currentUser.uid; // Pobierz userId
+        const fileRef = ref(storage, `images/${userId}/${fileName}`);
+
+        getDownloadURL(fileRef)
+            .then((url) => {
+                console.log('File available at', url);
+                // Możesz użyć tego URL do wyświetlenia obrazu w aplikacji
+                setImages(prevImages => [...prevImages, url]); // Dodaj nowy URL do tablicy obrazków
+            })
+            .catch((error) => {
+                console.error('Error getting file URL:', error);
+            });
     };
 
     return (
         <main>
             <div className="upload-container">
-                <select onChange={(e) => setSelectedAlbumId(e.target.value)} required>
-                    <option value="">Wybierz album</option>
-                    {albums.map(album => (
-                        <option key={album.id} value={album.id}>{album.name}</option>
-                    ))}
-                </select>
                 <input
                     type="file"
                     id="fileInput"
@@ -90,10 +98,10 @@ function Gallery() {
                 />
                 <button
                     onClick={() => {
-                        if (selectedFile && selectedAlbumId) {
+                        if (selectedFile) {
                             uploadFile(selectedFile); // Wywołaj funkcję przesyłania pliku
                         } else {
-                            setUploadError('Proszę wybrać plik i album przed wysłaniem.'); // Komunikat o błędzie
+                            setUploadError('Proszę wybrać plik przed wysłaniem.'); // Komunikat o błędzie
                         }
                     }}
                     className="upload-button" // Dodaj klasę do stylizacji
