@@ -10,6 +10,7 @@ import { library } from "@fortawesome/fontawesome-svg-core";
 import { faRightFromBracket, faTimes, faChevronLeft, faChevronRight } from "@fortawesome/free-solid-svg-icons";
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from './firebaseConfig';
+import CreateAlbum from './components/CreateAlbum';
 
 library.add(faRightFromBracket, faTimes, faChevronLeft, faChevronRight);
 
@@ -50,7 +51,10 @@ function App() {
       {!user ? (
         <Login onLoginSuccess={handleLoginSuccess} />
       ) : (
-        <Gallery user={user} />
+        <>
+          <CreateAlbum />
+          <Gallery />
+        </>
       )}
       <Footer />
     </div>
