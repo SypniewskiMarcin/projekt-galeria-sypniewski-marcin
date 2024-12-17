@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { db } from '../firebaseConfig'; // Importuj instancję Firestore
 import { doc, setDoc } from 'firebase/firestore';
-import './CreateAlbum.css'; // Importuj style dla CreateAlbum
 
 const CreateAlbum = ({ user, onClose }) => {
     const [albumName, setAlbumName] = useState('');
