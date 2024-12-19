@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { db } from '../firebaseConfig';
 import { doc, setDoc } from 'firebase/firestore';
-import Alert from './Alert';
 
 const CreateAlbum = ({ user, onClose }) => {
     const [formData, setFormData] = useState({
@@ -10,12 +9,10 @@ const CreateAlbum = ({ user, onClose }) => {
         isPublic: true,
         isCommercial: false,
         watermark: false,
-        creationDate: new Date().toISOString().split('T')[0],
-        categories: []
+        creationDate: new Date().toISOString().split('T')[0]
     });
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
-    const [showAlert, setShowAlert] = useState(false);
 
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -73,8 +70,7 @@ const CreateAlbum = ({ user, onClose }) => {
                     owner: user.uid,
                     editors: [],
                     viewers: []
-                },
-                categories: formData.categories
+                }
             };
 
             console.log('Dane albumu do zapisania:', albumData);
@@ -87,7 +83,6 @@ const CreateAlbum = ({ user, onClose }) => {
             console.log('Zapis do Firestore zakończony sukcesem');
 
             setSuccessMessage('Album został dodany pomyślnie!');
-            setShowAlert(true);
             setError('');
 
             // Resetowanie formularza
@@ -97,17 +92,12 @@ const CreateAlbum = ({ user, onClose }) => {
                 isPublic: true,
                 isCommercial: false,
                 watermark: false,
-                creationDate: new Date().toISOString().split('T')[0],
-                categories: []
+                creationDate: new Date().toISOString().split('T')[0]
             });
 
-            // Zamknij formularz po całkowitym zakończeniu animacji alertu
-            setTimeout(() => {
-                if (typeof onClose === 'function') {
-                    onClose();
-                }
-            }, 4500); // 3000ms (wyświetlanie) + 1500ms (animacja)
-
+            if (typeof onClose === 'function') {
+                onClose();
+            }
         } catch (error) {
             console.error('Szczegóły błędu:', {
                 message: error.message,
@@ -141,14 +131,8 @@ const CreateAlbum = ({ user, onClose }) => {
 
     return (
         <form onSubmit={handleSubmit} className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
-            {error && <p className="mb-4 text-red-500 text-sm" role="alert">{error}</p>}
-            {showAlert && (
-                <Alert
-                    message={successMessage}
-                    onClose={() => setShowAlert(false)}
-                    type="success"
-                />
-            )}
+            {error && <p className="mb-4 text-red-500 text-sm">{error}</p>}
+            {successMessage && <p className="mb-4 text-green-500 text-sm">{successMessage}</p>}
 
             <div className="space-y-4">
                 <input

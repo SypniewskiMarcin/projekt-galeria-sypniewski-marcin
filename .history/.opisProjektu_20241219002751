@@ -1,0 +1,17 @@
+
+
+Technologie:
+Frontend:
+	HTML, CSS - struktura i stylizacja strony
+	JavaScript - dynamiczne elementy interfejsu użytkownika
+	Framework React – ułatwi budowę interaktywnych interfejsów
+Backend:
+	Node.js – zarządzania logiką aplikacji i przetwarzania żądań
+	Express (Node.js) – przyśpieszenie rozwoju Backend’u
+Baza danych:
+Firebase - przechowywanie metadanych zdjęć, użytkowników i albumów.
+Hosting i serwery:
+Wstępnie zakładam oparcie się na localhost oraz Firebase bez hostingu.
+Bezpieczeństwo:
+OAuth – implementacja do autoryzacji i uwierzytelniania
+	Cetryfikaty SSL – zabezpieczenie transmisji danych

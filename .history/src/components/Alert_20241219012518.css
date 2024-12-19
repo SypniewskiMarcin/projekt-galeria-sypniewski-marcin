@@ -36,33 +36,36 @@
     0% {
         opacity: 0;
         transform: translateY(-20px) scale(0.98);
+        filter: blur(1px);
     }
 
     100% {
         opacity: 1;
         transform: translateY(0) scale(1);
+        filter: blur(0);
     }
 }
 
 .alert.closing {
-    animation: fadeOutRight 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-    pointer-events: none;
+    animation: fadeOutRight 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
 }
 
 @keyframes fadeOutRight {
     0% {
         opacity: 1;
         transform: translateX(0) scale(1);
+        filter: blur(0);
     }
 
-    15% {
+    20% {
         opacity: 1;
-        transform: translateX(-15px) scale(1.01);
+        transform: translateX(-20px) scale(1.02);
     }
 
     100% {
         opacity: 0;
-        transform: translateX(400px) scale(0.98);
+        transform: translateX(300px) scale(0.95);
+        filter: blur(3px);
     }
 }
 

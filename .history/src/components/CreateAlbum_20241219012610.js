@@ -10,8 +10,7 @@ const CreateAlbum = ({ user, onClose }) => {
         isPublic: true,
         isCommercial: false,
         watermark: false,
-        creationDate: new Date().toISOString().split('T')[0],
-        categories: []
+        creationDate: new Date().toISOString().split('T')[0]
     });
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
@@ -73,8 +72,7 @@ const CreateAlbum = ({ user, onClose }) => {
                     owner: user.uid,
                     editors: [],
                     viewers: []
-                },
-                categories: formData.categories
+                }
             };
 
             console.log('Dane albumu do zapisania:', albumData);
@@ -97,16 +95,25 @@ const CreateAlbum = ({ user, onClose }) => {
                 isPublic: true,
                 isCommercial: false,
                 watermark: false,
-                creationDate: new Date().toISOString().split('T')[0],
-                categories: []
+                creationDate: new Date().toISOString().split('T')[0]
             });
 
-            // Zamknij formularz po całkowitym zakończeniu animacji alertu
+            // Opóźniamy zamknięcie formularza
+            const ALERT_ANIMATION_DURATION = 1500; // 1.5s w milisekundach
+            const ALERT_DISPLAY_DURATION = 3000; // 3s w milisekundach
+            const TOTAL_DELAY = ALERT_ANIMATION_DURATION + ALERT_DISPLAY_DURATION;
+
             setTimeout(() => {
-                if (typeof onClose === 'function') {
-                    onClose();
-                }
-            }, 4500); // 3000ms (wyświetlanie) + 1500ms (animacja)
+                // Inicjujemy animację zamknięcia alertu
+                setShowAlert(false);
+
+                // Czekamy na zakończenie animacji przed zamknięciem formularza
+                setTimeout(() => {
+                    if (typeof onClose === 'function') {
+                        onClose();
+                    }
+                }, ALERT_ANIMATION_DURATION);
+            }, ALERT_DISPLAY_DURATION);
 
         } catch (error) {
             console.error('Szczegóły błędu:', {

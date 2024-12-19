@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { db } from '../firebaseConfig';
 import { doc, setDoc } from 'firebase/firestore';
-import Alert from './Alert';
 
 const CreateAlbum = ({ user, onClose }) => {
     const [formData, setFormData] = useState({
@@ -10,12 +9,10 @@ const CreateAlbum = ({ user, onClose }) => {
         isPublic: true,
         isCommercial: false,
         watermark: false,
-        creationDate: new Date().toISOString().split('T')[0],
-        categories: []
+        creationDate: new Date().toISOString().split('T')[0]
     });
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
-    const [showAlert, setShowAlert] = useState(false);
 
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -33,102 +30,33 @@ const CreateAlbum = ({ user, onClose }) => {
             return;
         }
 
+        const albumRef = doc(db, 'albums', formData.albumName);
+
         try {
-            console.log('Stan użytkownika:', {
-                isLoggedIn: !!user,
-                uid: user?.uid,
-                displayName: user?.displayName
-            });
-
-            if (!user || !user.uid) {
-                throw new Error('Użytkownik nie jest zalogowany');
-            }
-
-            // Generujemy bezpieczniejsze ID albumu
-            const timestamp = new Date().getTime();
-            const safeAlbumName = formData.albumName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
-            const albumId = `${user.uid}_${safeAlbumName}_${timestamp}`;
-
-            console.log('Przygotowywanie danych albumu:', { albumId });
-
-            const albumData = {
-                name: formData.albumName.trim(),
-                author: {
-                    uid: user.uid,
-                    displayName: user.displayName || 'Anonim',
-                    email: user.email
-                },
-                location: formData.location?.trim() || '',
+            await setDoc(albumRef, {
+                name: formData.albumName,
+                author: user.displayName,
+                location: formData.location,
                 creationDate: formData.creationDate,
                 isPublic: formData.isPublic,
                 isCommercial: formData.isCommercial,
                 watermark: formData.watermark,
                 createdBy: user.uid,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-                id: albumId,
-                status: 'active',
-                photos: [],
-                permissions: {
-                    owner: user.uid,
-                    editors: [],
-                    viewers: []
-                },
-                categories: formData.categories
-            };
-
-            console.log('Dane albumu do zapisania:', albumData);
-
-            // Próba dodania dokumentu
-            const albumRef = doc(db, 'albums', albumId);
-
-            console.log('Rozpoczęcie zapisu do Firestore...');
-            await setDoc(albumRef, albumData);
-            console.log('Zapis do Firestore zakończony sukcesem');
+                createdAt: new Date().toISOString()
+            });
 
             setSuccessMessage('Album został dodany pomyślnie!');
-            setShowAlert(true);
             setError('');
-
-            // Resetowanie formularza
             setFormData({
                 albumName: '',
                 location: '',
                 isPublic: true,
                 isCommercial: false,
                 watermark: false,
-                creationDate: new Date().toISOString().split('T')[0],
-                categories: []
+                creationDate: new Date().toISOString().split('T')[0]
             });
-
-            // Zamknij formularz po całkowitym zakończeniu animacji alertu
-            setTimeout(() => {
-                if (typeof onClose === 'function') {
-                    onClose();
-                }
-            }, 4500); // 3000ms (wyświetlanie) + 1500ms (animacja)
-
         } catch (error) {
-            console.error('Szczegóły błędu:', {
-                message: error.message,
-                code: error.code,
-                stack: error.stack
-            });
-
-            let errorMessage = 'Wystąpił błąd podczas dodawania albumu: ';
-
-            switch (error.code) {
-                case 'permission-denied':
-                    errorMessage += 'Brak uprawnień do wykonania tej operacji. Upewnij się, że jesteś zalogowany.';
-                    break;
-                case 'unauthenticated':
-                    errorMessage += 'Użytkownik nie jest zalogowany.';
-                    break;
-                default:
-                    errorMessage += error.message || 'Spróbuj ponownie później.';
-            }
-
-            setError(errorMessage);
+            setError('Wystąpił błąd podczas dodawania albumu. Spróbuj ponownie.');
             setSuccessMessage('');
         }
     };
@@ -141,14 +69,8 @@ const CreateAlbum = ({ user, onClose }) => {
 
     return (
         <form onSubmit={handleSubmit} className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
-            {error && <p className="mb-4 text-red-500 text-sm" role="alert">{error}</p>}
-            {showAlert && (
-                <Alert
-                    message={successMessage}
-                    onClose={() => setShowAlert(false)}
-                    type="success"
-                />
-            )}
+            {error && <p className="mb-4 text-red-500 text-sm">{error}</p>}
+            {successMessage && <p className="mb-4 text-green-500 text-sm">{successMessage}</p>}
 
             <div className="space-y-4">
                 <input

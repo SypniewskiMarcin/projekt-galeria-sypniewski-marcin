@@ -221,25 +221,22 @@ function Gallery({ user }) {
                         className="search-input"
                     />
 
-                    <div className="sort-controls">
-                        <select
-                            value={sortBy}
-                            onChange={handleSortChange}
-                            className="sort-select"
-                        >
-                            <option value="createdAt">Data publikacji</option>
-                            <option value="creationDate">Data wydarzenia</option>
-                            <option value="name">Nazwa</option>
-                        </select>
+                    <select
+                        value={sortBy}
+                        onChange={handleSortChange}
+                        className="sort-select"
+                    >
+                        <option value="createdAt">Data publikacji</option>
+                        <option value="creationDate">Data wydarzenia</option>
+                        <option value="name">Nazwa</option>
+                    </select>
 
-                        <button
-                            onClick={handleDirectionChange}
-                            className="sort-direction-button"
-                            aria-label={sortDirection === 'asc' ? 'Sortuj rosnąco' : 'Sortuj malejąco'}
-                        >
-                            {sortDirection === 'asc' ? '↑' : '↓'}
-                        </button>
-                    </div>
+                    <button
+                        onClick={handleDirectionChange}
+                        className="sort-direction-button"
+                    >
+                        {sortDirection === 'asc' ? '↑' : '↓'}
+                    </button>
 
                     <select
                         value={selectedCategory}

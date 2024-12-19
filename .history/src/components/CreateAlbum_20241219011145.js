@@ -10,8 +10,7 @@ const CreateAlbum = ({ user, onClose }) => {
         isPublic: true,
         isCommercial: false,
         watermark: false,
-        creationDate: new Date().toISOString().split('T')[0],
-        categories: []
+        creationDate: new Date().toISOString().split('T')[0]
     });
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
@@ -73,8 +72,7 @@ const CreateAlbum = ({ user, onClose }) => {
                     owner: user.uid,
                     editors: [],
                     viewers: []
-                },
-                categories: formData.categories
+                }
             };
 
             console.log('Dane albumu do zapisania:', albumData);
@@ -97,17 +95,14 @@ const CreateAlbum = ({ user, onClose }) => {
                 isPublic: true,
                 isCommercial: false,
                 watermark: false,
-                creationDate: new Date().toISOString().split('T')[0],
-                categories: []
+                creationDate: new Date().toISOString().split('T')[0]
             });
 
-            // Zamknij formularz po całkowitym zakończeniu animacji alertu
             setTimeout(() => {
                 if (typeof onClose === 'function') {
                     onClose();
                 }
-            }, 4500); // 3000ms (wyświetlanie) + 1500ms (animacja)
-
+            }, 2000);
         } catch (error) {
             console.error('Szczegóły błędu:', {
                 message: error.message,

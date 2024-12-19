@@ -17,11 +17,15 @@ function App() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
+    // Sprawdzamy, czy użytkownik jest zalogowany
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
+        // Pobierz dane użytkownika z Firestore
         const userRef = doc(db, 'users', currentUser.uid);
         const userDoc = await getDoc(userRef);
-        const role = userDoc.exists() ? userDoc.data().role : 'user';
+
+        // Ustaw użytkownika w stanie z rolą
+        const role = userDoc.exists() ? userDoc.data().role : 'user'; // Domyślna rola
         console.log('Zalogowany użytkownik:', {
           email: currentUser.email,
           role: role,
@@ -29,18 +33,20 @@ function App() {
         });
         setUser({ ...currentUser, role });
       } else {
-        setUser(null);
+        setUser(null); // Ustaw użytkownika na null, jeśli brak
       }
     });
 
+    // Zwracamy funkcję czyszczącą subskrypcję
     return () => unsubscribe();
   }, []);
 
   const handleLoginSuccess = async (userData) => {
+    // Ustaw użytkownika po zalogowaniu
     const userRef = doc(db, 'users', userData.uid);
     const userDoc = await getDoc(userRef);
-    const role = userDoc.exists() ? userDoc.data().role : 'user';
-    setUser({ ...userData, role });
+    const role = userDoc.exists() ? userDoc.data().role : 'user'; // Domyślna rola
+    setUser({ ...userData, role }); // Ustaw użytkownika z rolą
   };
 
   return (

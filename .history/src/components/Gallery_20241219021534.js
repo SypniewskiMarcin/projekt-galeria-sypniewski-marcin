@@ -221,25 +221,22 @@ function Gallery({ user }) {
                         className="search-input"
                     />
 
-                    <div className="sort-controls">
-                        <select
-                            value={sortBy}
-                            onChange={handleSortChange}
-                            className="sort-select"
-                        >
-                            <option value="createdAt">Data publikacji</option>
-                            <option value="creationDate">Data wydarzenia</option>
-                            <option value="name">Nazwa</option>
-                        </select>
+                    <select
+                        value={sortBy}
+                        onChange={handleSortChange}
+                        className="sort-select"
+                    >
+                        <option value="createdAt">Data publikacji</option>
+                        <option value="creationDate">Data wydarzenia</option>
+                        <option value="name">Nazwa</option>
+                    </select>
 
-                        <button
-                            onClick={handleDirectionChange}
-                            className="sort-direction-button"
-                            aria-label={sortDirection === 'asc' ? 'Sortuj rosnąco' : 'Sortuj malejąco'}
-                        >
-                            {sortDirection === 'asc' ? '↑' : '↓'}
-                        </button>
-                    </div>
+                    <button
+                        onClick={handleDirectionChange}
+                        className="sort-direction-button"
+                    >
+                        {sortDirection === 'asc' ? '↑' : '↓'}
+                    </button>
 
                     <select
                         value={selectedCategory}
@@ -277,33 +274,22 @@ function Gallery({ user }) {
                 <div className="albums-grid">
                     {currentAlbums.map(album => (
                         <div key={album.id} className="album-card">
-                            <div className="album-thumbnail">
-                                <img
-                                    src="/placeholder-album.jpg"
-                                    alt={`Okładka albumu ${album.name}`}
-                                    onError={(e) => {
-                                        e.target.style.display = 'none';
-                                    }}
-                                />
-                            </div>
-                            <div className="album-content">
-                                <h3>{album.name}</h3>
-                                <p>Autor: {album.author.displayName}</p>
-                                {album.location && <p>Lokalizacja: {album.location}</p>}
-                                <p>Data publikacji: {new Date(album.createdAt).toLocaleDateString()}</p>
-                                {album.creationDate && (
-                                    <p>Data wydarzenia: {new Date(album.creationDate).toLocaleDateString()}</p>
-                                )}
-                                {album.categories && (
-                                    <div className="album-categories">
-                                        {album.categories.map(category => (
-                                            <span key={category} className="category-tag">
-                                                {category}
-                                            </span>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
+                            <h3>{album.name}</h3>
+                            <p>Autor: {album.author.displayName}</p>
+                            {album.location && <p>Lokalizacja: {album.location}</p>}
+                            <p>Data publikacji: {new Date(album.createdAt).toLocaleDateString()}</p>
+                            {album.creationDate && (
+                                <p>Data wydarzenia: {new Date(album.creationDate).toLocaleDateString()}</p>
+                            )}
+                            {album.categories && (
+                                <div className="album-categories">
+                                    {album.categories.map(category => (
+                                        <span key={category} className="category-tag">
+                                            {category}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     ))}
                 </div>

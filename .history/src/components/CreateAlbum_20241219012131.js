@@ -10,8 +10,7 @@ const CreateAlbum = ({ user, onClose }) => {
         isPublic: true,
         isCommercial: false,
         watermark: false,
-        creationDate: new Date().toISOString().split('T')[0],
-        categories: []
+        creationDate: new Date().toISOString().split('T')[0]
     });
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
@@ -73,8 +72,7 @@ const CreateAlbum = ({ user, onClose }) => {
                     owner: user.uid,
                     editors: [],
                     viewers: []
-                },
-                categories: formData.categories
+                }
             };
 
             console.log('Dane albumu do zapisania:', albumData);
@@ -97,16 +95,25 @@ const CreateAlbum = ({ user, onClose }) => {
                 isPublic: true,
                 isCommercial: false,
                 watermark: false,
-                creationDate: new Date().toISOString().split('T')[0],
-                categories: []
+                creationDate: new Date().toISOString().split('T')[0]
             });
 
-            // Zamknij formularz po całkowitym zakończeniu animacji alertu
+            // Opóźniamy zamknięcie formularza o czas trwania animacji alertu (0.7s) + dodatkowy czas na pokazanie alertu
+            const ALERT_ANIMATION_DURATION = 700; // 0.7s w milisekundach
+            const ALERT_DISPLAY_DURATION = 2000; // 2s w milisekundach
+            const TOTAL_DELAY = ALERT_ANIMATION_DURATION + ALERT_DISPLAY_DURATION;
+
             setTimeout(() => {
-                if (typeof onClose === 'function') {
-                    onClose();
-                }
-            }, 4500); // 3000ms (wyświetlanie) + 1500ms (animacja)
+                // Najpierw inicjujemy animację zamknięcia alertu
+                setShowAlert(false);
+
+                // Następnie zamykamy formularz po zakończeniu animacji alertu
+                setTimeout(() => {
+                    if (typeof onClose === 'function') {
+                        onClose();
+                    }
+                }, ALERT_ANIMATION_DURATION);
+            }, ALERT_DISPLAY_DURATION);
 
         } catch (error) {
             console.error('Szczegóły błędu:', {

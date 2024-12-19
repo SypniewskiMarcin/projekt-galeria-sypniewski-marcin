@@ -1,7 +1,6 @@
 // src/components/Login.js
 import React, { useState } from 'react';
-import { auth, provider } from '../firebaseConfig';
-import { signInWithPopup } from 'firebase/auth';
+import { signInWithGoogle } from '../firebaseConfig';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 
@@ -10,22 +9,7 @@ const Login = ({ onLoginSuccess }) => {
 
     const handleGoogleSignIn = async () => {
         try {
-            const result = await signInWithPopup(auth, provider);
-            const user = result.user;
-
-            // Sprawdź, czy użytkownik już istnieje w Firestore
-            const userRef = doc(db, 'users', user.uid);
-            const userDoc = await getDoc(userRef);
-
-            if (!userDoc.exists()) {
-                // Użytkownik nie istnieje, dodaj go do Firestore
-                await setDoc(userRef, {
-                    uid: user.uid,
-                    name: user.displayName,
-                    email: user.email,
-                    role: 'user' // Domyślna rola
-                });
-            }
+            const user = await signInWithGoogle();
 
             // Sprawdź, czy użytkownik jest administratorem
             const adminRef = doc(db, 'settings', 'admin');
@@ -36,7 +20,7 @@ const Login = ({ onLoginSuccess }) => {
                 const adminEmail = adminDoc.data().email;
                 if (user.email === adminEmail) {
                     role = 'admin';
-                    await setDoc(userRef, { role: 'admin' }, { merge: true });
+                    await setDoc(doc(db, 'users', user.uid), { role: 'admin' }, { merge: true });
                 }
             }
 

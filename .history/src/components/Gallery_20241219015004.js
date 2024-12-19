@@ -1,5 +1,5 @@
 // src/components/Gallery.js
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import ImageModal from "./ImageModal";
 import Alert from "./Alert"; // Importuj komponent Alert
 import { storage, auth } from '../firebaseConfig'; // Importuj storage i auth
@@ -22,8 +22,6 @@ function Gallery({ user }) {
     const [sortBy, setSortBy] = useState('createdAt'); // domyślne sortowanie po dacie utworzenia
     const [sortDirection, setSortDirection] = useState('desc'); // domyślnie malejąco
     const [selectedCategory, setSelectedCategory] = useState('all');
-    const [currentPage, setCurrentPage] = useState(1);
-    const [albumsPerPage] = useState(10);
 
     const categories = [
         'all',
@@ -50,9 +48,9 @@ function Gallery({ user }) {
 
     useEffect(() => {
         fetchAlbums();
-    }, [sortBy, sortDirection, selectedCategory, searchTerm]);
+    }, [sortBy, sortDirection, selectedCategory]);
 
-    const fetchAlbums = useCallback(async () => {
+    const fetchAlbums = async () => {
         try {
             setLoading(true);
             const albumsRef = collection(db, 'albums');
@@ -88,7 +86,7 @@ function Gallery({ user }) {
         } finally {
             setLoading(false);
         }
-    }, [sortBy, sortDirection, selectedCategory, searchTerm]);
+    };
 
     const handleSearch = (e) => {
         setSearchTerm(e.target.value);
@@ -152,16 +150,6 @@ function Gallery({ user }) {
             });
     };
 
-    const indexOfLastAlbum = currentPage * albumsPerPage;
-    const indexOfFirstAlbum = indexOfLastAlbum - albumsPerPage;
-    const currentAlbums = albums.slice(indexOfFirstAlbum, indexOfLastAlbum);
-    const totalPages = Math.ceil(albums.length / albumsPerPage);
-
-    const handlePageChange = (pageNumber) => {
-        setCurrentPage(pageNumber);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
     if (loading) {
         return <div className="loading">Ładowanie albumów...</div>;
     }
@@ -172,15 +160,15 @@ function Gallery({ user }) {
                 <h2>Galeria</h2>
                 <button
                     className="add-album-button"
-                    onClick={() => setIsCreateAlbumVisible(true)}
+                    onClick={() => setIsCreateAlbumVisible(true)} // Otwórz formularz po kliknięciu
                 >
-                    <span>+</span>
+                    <span>+</span> {/* Ikona plusa */}
                 </button>
             </div>
 
             {isCreateAlbumVisible && (
                 <div className="create-album-modal">
-                    <CreateAlbum user={user} onClose={() => setIsCreateAlbumVisible(false)} />
+                    <CreateAlbum user={user} onClose={() => setIsCreateAlbumVisible(false)} /> {/* Przekaż funkcję do zamknięcia */}
                 </div>
             )}
 
@@ -190,144 +178,27 @@ function Gallery({ user }) {
                     id="fileInput"
                     onChange={(e) => {
                         const file = e.target.files[0];
-                        setSelectedFile(file);
+                        setSelectedFile(file); // Ustaw wybrany plik w stanie
                     }}
-                    className="file-input"
+                    className="file-input" // Dodaj klasę do stylizacji
                 />
                 <button
                     onClick={() => {
                         if (selectedFile) {
-                            uploadFile(selectedFile);
+                            uploadFile(selectedFile); // Wywołaj funkcję przesyłania pliku
                         } else {
-                            setUploadError('Proszę wybrać plik przed wysłaniem.');
+                            setUploadError('Proszę wybrać plik przed wysłaniem.'); // Komunikat o błędzie
                         }
                     }}
-                    className="upload-button"
+                    className="upload-button" // Dodaj klasę do stylizacji
                 >
                     Wyślij
                 </button>
-                {uploadError && <p className="error-message">{uploadError}</p>}
+                {uploadError && <p className="error-message">{uploadError}</p>} {/* Wyświetl błąd, jeśli wystąpił */}
             </div>
 
+            {/* Wyświetl alert, jeśli jest komunikat */}
             {alertMessage && <Alert message={alertMessage} onClose={() => setAlertMessage('')} />}
-
-            <div className="gallery-container">
-                <div className="gallery-controls">
-                    <input
-                        type="text"
-                        placeholder="Szukaj po nazwie, autorze lub lokalizacji..."
-                        value={searchTerm}
-                        onChange={handleSearch}
-                        className="search-input"
-                    />
-
-                    <div className="sort-controls">
-                        <select
-                            value={sortBy}
-                            onChange={handleSortChange}
-                            className="sort-select"
-                        >
-                            <option value="createdAt">Data publikacji</option>
-                            <option value="creationDate">Data wydarzenia</option>
-                            <option value="name">Nazwa</option>
-                        </select>
-
-                        <button
-                            onClick={handleDirectionChange}
-                            className="sort-direction-button"
-                            aria-label={sortDirection === 'asc' ? 'Sortuj rosnąco' : 'Sortuj malejąco'}
-                        >
-                            {sortDirection === 'asc' ? '↑' : '↓'}
-                        </button>
-                    </div>
-
-                    <select
-                        value={selectedCategory}
-                        onChange={handleCategoryChange}
-                        className="category-select"
-                    >
-                        {categories.map(category => (
-                            <option key={category} value={category}>
-                                {category.charAt(0).toUpperCase() + category.slice(1)}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                <div className="pagination-controls">
-                    <button
-                        onClick={() => handlePageChange(currentPage - 1)}
-                        disabled={currentPage === 1}
-                        className="pagination-button"
-                    >
-                        ← Poprzednia
-                    </button>
-                    <span className="pagination-info">
-                        Strona {currentPage} z {totalPages}
-                    </span>
-                    <button
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        disabled={currentPage === totalPages}
-                        className="pagination-button"
-                    >
-                        Następna →
-                    </button>
-                </div>
-
-                <div className="albums-grid">
-                    {currentAlbums.map(album => (
-                        <div key={album.id} className="album-card">
-                            <div className="album-thumbnail">
-                                <img
-                                    src="/placeholder-album.jpg"
-                                    alt={`Okładka albumu ${album.name}`}
-                                    onError={(e) => {
-                                        e.target.style.display = 'none';
-                                    }}
-                                />
-                            </div>
-                            <div className="album-content">
-                                <h3>{album.name}</h3>
-                                <p>Autor: {album.author.displayName}</p>
-                                {album.location && <p>Lokalizacja: {album.location}</p>}
-                                <p>Data publikacji: {new Date(album.createdAt).toLocaleDateString()}</p>
-                                {album.creationDate && (
-                                    <p>Data wydarzenia: {new Date(album.creationDate).toLocaleDateString()}</p>
-                                )}
-                                {album.categories && (
-                                    <div className="album-categories">
-                                        {album.categories.map(category => (
-                                            <span key={category} className="category-tag">
-                                                {category}
-                                            </span>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    ))}
-                </div>
-
-                <div className="pagination-controls">
-                    <button
-                        onClick={() => handlePageChange(currentPage - 1)}
-                        disabled={currentPage === 1}
-                        className="pagination-button"
-                    >
-                        ← Poprzednia
-                    </button>
-                    <span className="pagination-info">
-                        Strona {currentPage} z {totalPages}
-                    </span>
-                    <button
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        disabled={currentPage === totalPages}
-                        className="pagination-button"
-                    >
-                        Następna →
-                    </button>
-                </div>
-            </div>
 
             <div className="gallery">
                 {images.map((image, index) => (
@@ -349,6 +220,70 @@ function Gallery({ user }) {
                     onNext={handleNext}
                 />
             )}
+
+            <div className="gallery-container">
+                <div className="gallery-controls">
+                    <input
+                        type="text"
+                        placeholder="Szukaj po nazwie, autorze lub lokalizacji..."
+                        value={searchTerm}
+                        onChange={handleSearch}
+                        className="search-input"
+                    />
+
+                    <select
+                        value={sortBy}
+                        onChange={handleSortChange}
+                        className="sort-select"
+                    >
+                        <option value="createdAt">Data publikacji</option>
+                        <option value="creationDate">Data wydarzenia</option>
+                        <option value="name">Nazwa</option>
+                    </select>
+
+                    <button
+                        onClick={handleDirectionChange}
+                        className="sort-direction-button"
+                    >
+                        {sortDirection === 'asc' ? '↑' : '↓'}
+                    </button>
+
+                    <select
+                        value={selectedCategory}
+                        onChange={handleCategoryChange}
+                        className="category-select"
+                    >
+                        {categories.map(category => (
+                            <option key={category} value={category}>
+                                {category.charAt(0).toUpperCase() + category.slice(1)}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="albums-grid">
+                    {albums.map(album => (
+                        <div key={album.id} className="album-card">
+                            <h3>{album.name}</h3>
+                            <p>Autor: {album.author.displayName}</p>
+                            {album.location && <p>Lokalizacja: {album.location}</p>}
+                            <p>Data publikacji: {new Date(album.createdAt).toLocaleDateString()}</p>
+                            {album.creationDate && (
+                                <p>Data wydarzenia: {new Date(album.creationDate).toLocaleDateString()}</p>
+                            )}
+                            {album.categories && (
+                                <div className="album-categories">
+                                    {album.categories.map(category => (
+                                        <span key={category} className="category-tag">
+                                            {category}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </div>
         </main>
     );
 }
