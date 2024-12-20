@@ -1,0 +1,42 @@
+rules_version = '2';
+
+// Reguły dla Cloud Firestore (bez zmian)
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ... (pozostała część bez zmian)
+  }
+}
+
+// Reguły dla Cloud Storage
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Funkcje pomocnicze
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isAlbumAuthor(albumId) {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/albums/$(albumId)) &&
+        get(/databases/$(database)/documents/albums/$(albumId)).data.author.uid == request.auth.uid;
+    }
+
+    // Reguły dla zdjęć w albumach
+    match /albums/{albumId}/{photoId} {
+      allow read: if true;
+      allow write: if isAlbumAuthor(albumId) || isAdmin();
+    }
+
+    // Reguła domyślna dla pozostałych plików
+    match /{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

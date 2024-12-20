@@ -13,9 +13,6 @@ import AlbumView from './AlbumView'; // Importuj komponent AlbumView
 function Gallery({ user }) {
     const [selectedImageIndex, setSelectedImageIndex] = useState(null);
     const [images, setImages] = useState([]);
-    const [uploadError, setUploadError] = useState('');
-    const [selectedFile, setSelectedFile] = useState(null); // Stan do przechowywania wybranego pliku
-    const [alertMessage, setAlertMessage] = useState(''); // Stan do przechowywania komunikatu alertu
     const [isCreateAlbumVisible, setIsCreateAlbumVisible] = useState(false); // Stan do zarządzania widocznością formularza
     const [albums, setAlbums] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -120,40 +117,6 @@ function Gallery({ user }) {
         );
     };
 
-    // Funkcja do przesyłania plików
-    const uploadFile = (file) => {
-        const userId = auth.currentUser.uid; // Pobierz userId z Firebase Authentication
-        const storageRef = ref(storage, `images/${userId}/${file.name}`);
-
-        uploadBytes(storageRef, file).then((snapshot) => {
-            console.log('Uploaded a blob or file!', snapshot);
-            // Po przesłaniu pliku, możesz od razu pobrać URL
-            getFileUrl(file.name); // Wywołaj funkcję do pobierania URL
-            setAlertMessage('Plik wysłany pomyślnie!'); // Ustaw komunikat o sukcesie
-            setSelectedFile(null); // Wyczyść wybrane plik
-            document.getElementById('fileInput').value = ''; // Wyczyść pole input
-        }).catch((error) => {
-            console.error('Error uploading file:', error);
-            setUploadError('Błąd przesyłania pliku. Spróbuj ponownie.'); // Ustaw komunikat o błędzie
-        });
-    };
-
-    // Funkcja do pobierania URL pliku
-    const getFileUrl = (fileName) => {
-        const userId = auth.currentUser.uid; // Pobierz userId
-        const fileRef = ref(storage, `images/${userId}/${fileName}`);
-
-        getDownloadURL(fileRef)
-            .then((url) => {
-                console.log('File available at', url);
-                // Możesz użyć tego URL do wyświetlenia obrazu w aplikacji
-                setImages(prevImages => [...prevImages, url]); // Dodaj nowy URL do tablicy obrazków
-            })
-            .catch((error) => {
-                console.error('Error getting file URL:', error);
-            });
-    };
-
     const indexOfLastAlbum = currentPage * albumsPerPage;
     const indexOfFirstAlbum = indexOfLastAlbum - albumsPerPage;
     const currentAlbums = albums.slice(indexOfFirstAlbum, indexOfLastAlbum);
@@ -196,33 +159,6 @@ function Gallery({ user }) {
                             <CreateAlbum user={user} onClose={() => setIsCreateAlbumVisible(false)} />
                         </div>
                     )}
-
-                    <div className="upload-container">
-                        <input
-                            type="file"
-                            id="fileInput"
-                            onChange={(e) => {
-                                const file = e.target.files[0];
-                                setSelectedFile(file);
-                            }}
-                            className="file-input"
-                        />
-                        <button
-                            onClick={() => {
-                                if (selectedFile) {
-                                    uploadFile(selectedFile);
-                                } else {
-                                    setUploadError('Proszę wybrać plik przed wysłaniem.');
-                                }
-                            }}
-                            className="upload-button"
-                        >
-                            Wyślij
-                        </button>
-                        {uploadError && <p className="error-message">{uploadError}</p>}
-                    </div>
-
-                    {alertMessage && <Alert message={alertMessage} onClose={() => setAlertMessage('')} />}
 
                     <div className="gallery-container">
                         <div className="gallery-controls">
