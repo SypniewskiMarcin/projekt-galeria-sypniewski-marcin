@@ -1,13 +1,5 @@
 rules_version = '2';
 
-// Reguły dla Cloud Firestore (bez zmian)
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // ... (pozostała część bez zmian)
-  }
-}
-
-// Reguły dla Cloud Storage
 service firebase.storage {
   match /b/{bucket}/o {
     // Funkcje pomocnicze
@@ -17,8 +9,8 @@ service firebase.storage {
 
     function isAdmin() {
       return isAuthenticated() && 
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+        exists(/databases/$(database)/documents/settings/admin) &&
+        get(/databases/$(database)/documents/settings/admin).data.email == request.auth.token.email;
     }
 
     function isAlbumAuthor(albumId) {
@@ -28,15 +20,15 @@ service firebase.storage {
     }
 
     // Reguły dla zdjęć w albumach
-    match /albums/{albumId}/{photoId} {
+    match /albums/{albumId}/{fileName} {
       allow read: if true;
       allow write: if isAlbumAuthor(albumId) || isAdmin();
     }
 
-    // Reguła domyślna dla pozostałych plików
-    match /{allPaths=**} {
+    // Zachowujemy też dostęp do istniejącego folderu images
+    match /images/{userId}/{allPaths=**} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }

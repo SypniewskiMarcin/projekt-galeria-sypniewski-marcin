@@ -1,0 +1,44 @@
+rules_version = '2';
+
+// Reguły dla Cloud Firestore
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Funkcje pomocnicze
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/settings/admin) &&
+        get(/databases/$(database)/documents/settings/admin).data.email == request.auth.token.email;
+    }
+
+    // Reguły dla users
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if request.auth.uid == userId;
+    }
+
+    // Reguły dla albums
+    match /albums/{albumId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && 
+        (resource.data.author.uid == request.auth.uid || isAdmin());
+
+      // Reguły dla subkolekcji photos w albumach
+      match /photos/{photoId} {
+        allow read: if true;
+        allow write: if isAuthenticated() && 
+          (get(/databases/$(database)/documents/albums/$(albumId)).data.author.uid == request.auth.uid || isAdmin());
+      }
+    }
+
+    // Reguły dla settings
+    match /settings/{document} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+  }
+}
