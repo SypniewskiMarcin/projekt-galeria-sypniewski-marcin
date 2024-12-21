@@ -165,4 +165,107 @@
         background-color: #444;
         color: #888;
     }
+}
+
+.album-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.download-button,
+.select-button,
+.download-selected-button,
+.cancel-selection-button {
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.download-button {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.select-button {
+    background-color: #2196F3;
+    color: white;
+}
+
+.download-selected-button {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.cancel-selection-button {
+    background-color: #f44336;
+    color: white;
+    padding: 8px 12px;
+}
+
+.photo-item {
+    position: relative;
+    cursor: pointer;
+}
+
+.selection-mode {
+    cursor: pointer;
+}
+
+.selection-overlay {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.2s ease;
+    z-index: 2;
+}
+
+.selection-overlay:hover {
+    background-color: rgba(0, 0, 0, 0.8);
+    transform: scale(1.1);
+}
+
+.photo-item.selected .selection-overlay {
+    background-color: #4CAF50;
+}
+
+.photo-item.selected img {
+    border: 2px solid #4CAF50;
+}
+
+/* Dodajemy efekt hover dla przycisku zaznaczania */
+.selection-overlay:hover {
+    background-color: #357ae8;
+}
+
+.photo-item.selected .selection-overlay:hover {
+    background-color: #3d8b40;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+    .download-button,
+    .select-button,
+    .download-selected-button {
+        background-color: #1e1e1e;
+    }
+
+    .cancel-selection-button {
+        background-color: #d32f2f;
+    }
 } 
