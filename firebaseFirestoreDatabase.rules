@@ -14,22 +14,41 @@ service cloud.firestore {
         get(/databases/$(database)/documents/settings/admin).data.email == request.auth.token.email;
     }
 
+    function isValidAlbum(album) {
+      return album.name is string &&
+             album.name.size() >= 3 &&
+             album.name.size() <= 100 &&
+             album.author.uid is string &&
+             album.isPublic is bool &&
+             album.createdAt is timestamp;
+    }
+
+    function isValidPhoto(photo) {
+      return photo.url is string &&
+             photo.fileName is string &&
+             photo.uploadedBy is string &&
+             photo.uploadedAt is timestamp;
+    }
+
     // Reguły dla users
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow write: if request.auth.uid == userId;
+      allow write: if request.auth.uid == userId || isAdmin();
     }
 
     // Reguły dla albums
     match /albums/{albumId} {
-      allow read: if true;
-      allow create: if isAuthenticated();
+      allow read: if resource.data.isPublic || isAdmin() || 
+        (isAuthenticated() && resource.data.author.uid == request.auth.uid);
+      allow create: if isAuthenticated() && isValidAlbum(request.resource.data);
       allow update, delete: if isAuthenticated() && 
         (resource.data.author.uid == request.auth.uid || isAdmin());
 
-      // Reguły dla subkolekcji photos w albumach
+      // Reguły dla subkolekcji photos
       match /photos/{photoId} {
-        allow read: if true;
+        allow read: if get(/databases/$(database)/documents/albums/$(albumId)).data.isPublic || 
+          isAdmin() || 
+          (isAuthenticated() && get(/databases/$(database)/documents/albums/$(albumId)).data.author.uid == request.auth.uid);
         allow write: if isAuthenticated() && 
           (get(/databases/$(database)/documents/albums/$(albumId)).data.author.uid == request.auth.uid || isAdmin());
       }
@@ -38,7 +57,7 @@ service cloud.firestore {
     // Reguły dla settings
     match /settings/{document} {
       allow read: if isAuthenticated();
-      allow write: if false;
+      allow write: if isAdmin();  // Admin może modyfikować ustawienia
     }
   }
 }
