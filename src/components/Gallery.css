@@ -212,6 +212,7 @@
     gap: 16px;
     box-sizing: border-box;
     align-items: center;
+    position: relative;
 }
 
 .album-thumbnail {
@@ -494,5 +495,24 @@ main {
     .sort-select,
     .category-select {
         font-size: 16px;
+    }
+}
+
+.album-privacy-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+    .album-privacy-badge {
+        background-color: rgba(255, 255, 255, 0.2);
     }
 }

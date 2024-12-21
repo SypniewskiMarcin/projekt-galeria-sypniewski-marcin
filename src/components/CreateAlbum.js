@@ -31,16 +31,32 @@ const CreateAlbum = ({ user, onClose }) => {
         e.preventDefault();
         
         try {
-            const currentUser = auth.currentUser;
-            if (!currentUser) throw new Error('Użytkownik nie jest zalogowany');
+            // Walidacja nazwy albumu
+            if (formData.albumName.length < 3) {
+                setError('Nazwa albumu musi mieć co najmniej 3 znaki');
+                setShowAlert(true);
+                return;
+            }
+            
+            if (formData.albumName.length > 100) {
+                setError('Nazwa albumu nie może przekraczać 100 znaków');
+                setShowAlert(true);
+                return;
+            }
 
-            console.log('Creating album with data:', {
-                currentUser: {
-                    uid: currentUser.uid,
-                    displayName: currentUser.displayName
-                },
-                formData
-            });
+            // Walidacja lokalizacji
+            if (formData.location && formData.location.length > 100) {
+                setError('Nazwa lokalizacji nie może przekraczać 100 znaków');
+                setShowAlert(true);
+                return;
+            }
+
+            const currentUser = auth.currentUser;
+            if (!currentUser) {
+                setError('Użytkownik nie jest zalogowany');
+                setShowAlert(true);
+                return;
+            }
 
             const albumData = {
                 name: formData.albumName,
@@ -66,16 +82,15 @@ const CreateAlbum = ({ user, onClose }) => {
             };
 
             const docRef = await addDoc(collection(db, 'albums'), albumData);
-            console.log('Album created:', {
-                id: docRef.id,
-                data: albumData
-            });
-
             setSuccessMessage('Album został utworzony pomyślnie!');
-            onClose();
+            setShowAlert(true);
+            setTimeout(() => {
+                onClose();
+            }, 2000);
         } catch (error) {
             console.error('Błąd tworzenia albumu:', error);
             setError('Wystąpił błąd podczas tworzenia albumu.');
+            setShowAlert(true);
         }
     };
 

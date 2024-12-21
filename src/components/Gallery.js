@@ -23,6 +23,7 @@ function Gallery({ user }) {
     const [currentPage, setCurrentPage] = useState(1);
     const [albumsPerPage] = useState(10);
     const [selectedAlbumId, setSelectedAlbumId] = useState(null);
+    const [error, setError] = useState(null);
 
     const categories = [
         'all',
@@ -49,45 +50,74 @@ function Gallery({ user }) {
 
     useEffect(() => {
         fetchAlbums();
-    }, [sortBy, sortDirection, selectedCategory, searchTerm]);
+    }, [sortBy, sortDirection, selectedCategory, searchTerm, user]);
 
     const fetchAlbums = useCallback(async () => {
         try {
             setLoading(true);
             const albumsRef = collection(db, 'albums');
-            let q = query(
-                albumsRef,
-                where('isPublic', '==', true),
-                orderBy(sortBy, sortDirection)
-            );
 
-            const querySnapshot = await getDocs(q);
-            const albumsData = querySnapshot.docs.map(doc => ({
+            // Podstawowe zapytanie o publiczne albumy
+            const publicQuery = query(
+                albumsRef,
+                where('isPublic', '==', true)
+            );
+            const publicSnapshot = await getDocs(publicQuery);
+            let allAlbums = publicSnapshot.docs.map(doc => ({
                 id: doc.id,
-                ...doc.data()
+                ...doc.data(),
+                isPrivate: false
             }));
 
-            // Filtrowanie po kategorii
-            const filteredAlbums = selectedCategory === 'all'
-                ? albumsData
-                : albumsData.filter(album => album.categories?.includes(selectedCategory));
+            // Jeśli użytkownik jest zalogowany, dodaj jego prywatne albumy
+            if (user) {
+                const privateQuery = query(
+                    albumsRef,
+                    where('isPublic', '==', false),
+                    where('author.uid', '==', user.uid)
+                );
+                const privateSnapshot = await getDocs(privateQuery);
+                const privateAlbums = privateSnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data(),
+                    isPrivate: true
+                }));
+                allAlbums = [...allAlbums, ...privateAlbums];
+            }
 
-            // Filtrowanie po wyszukiwanej frazie
-            const searchedAlbums = searchTerm
-                ? filteredAlbums.filter(album =>
+            // Sortowanie
+            allAlbums.sort((a, b) => {
+                if (sortDirection === 'asc') {
+                    return a[sortBy] > b[sortBy] ? 1 : -1;
+                }
+                return a[sortBy] < b[sortBy] ? 1 : -1;
+            });
+
+            // Filtrowanie
+            if (selectedCategory !== 'all') {
+                allAlbums = allAlbums.filter(album => 
+                    album.categories?.includes(selectedCategory)
+                );
+            }
+
+            // Wyszukiwanie
+            if (searchTerm) {
+                allAlbums = allAlbums.filter(album =>
                     album.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     album.author.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     album.location?.toLowerCase().includes(searchTerm.toLowerCase())
-                )
-                : filteredAlbums;
+                );
+            }
 
-            setAlbums(searchedAlbums);
+            setAlbums(allAlbums);
+            
         } catch (error) {
             console.error('Błąd podczas pobierania albumów:', error);
+            setError('Wystąpił błąd podczas pobierania albumów');
         } finally {
             setLoading(false);
         }
-    }, [sortBy, sortDirection, selectedCategory, searchTerm]);
+    }, [sortBy, sortDirection, selectedCategory, searchTerm, user]);
 
     const handleSearch = (e) => {
         setSearchTerm(e.target.value);
@@ -232,6 +262,11 @@ function Gallery({ user }) {
                                     role="button"
                                     tabIndex={0}
                                 >
+                                    {album.isPrivate && (
+                                        <span className="album-privacy-badge">
+                                            Prywatny
+                                        </span>
+                                    )}
                                     <div className="album-thumbnail">
                                         <img
                                             src="/placeholder-album.jpg"
