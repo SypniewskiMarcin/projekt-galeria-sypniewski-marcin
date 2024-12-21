@@ -9,23 +9,16 @@ service firebase.storage {
 
     function isAdmin() {
       return isAuthenticated() && 
-        exists(/databases/$(database)/documents/settings/admin) &&
-        get(/databases/$(database)/documents/settings/admin).data.email == request.auth.token.email;
-    }
-
-    function isAlbumAuthor(albumId) {
-      return isAuthenticated() &&
-        exists(/databases/$(database)/documents/albums/$(albumId)) &&
-        get(/databases/$(database)/documents/albums/$(albumId)).data.author.uid == request.auth.uid;
+        request.auth.token.email == "kajuchu@gmail.com";
     }
 
     // Reguły dla zdjęć w albumach
     match /albums/{albumId}/{fileName} {
       allow read: if true;
-      allow write: if isAlbumAuthor(albumId) || isAdmin();
+      allow create, write: if isAuthenticated();
     }
 
-    // Zachowujemy też dostęp do istniejącego folderu images
+    // Zachowujemy dostęp do istniejącego folderu images
     match /images/{userId}/{allPaths=**} {
       allow read: if true;
       allow write: if request.auth != null && request.auth.uid == userId;

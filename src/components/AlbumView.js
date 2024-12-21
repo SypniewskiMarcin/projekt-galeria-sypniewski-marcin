@@ -50,38 +50,33 @@ const AlbumView = ({ albumId, onBack }) => {
                 throw new Error('Brak danych albumu lub użytkownika');
             }
 
-            // Sprawdź uprawnienia
-            const userRef = doc(db, 'users', auth.currentUser.uid);
-            const userDoc = await getDoc(userRef);
-            const isAdmin = userDoc.exists() && userDoc.data().role === 'admin';
-            const isAuthor = album.author.uid === auth.currentUser.uid;
-
-            if (!isAdmin && !isAuthor) {
-                throw new Error('Brak uprawnień do dodawania zdjęć do tego albumu');
-            }
-
-            console.log('Uprawnienia użytkownika:', {
-                isAdmin,
-                isAuthor,
-                userId: auth.currentUser.uid,
-                albumAuthorId: album.author.uid
+            console.log('Rozpoczynam upload:', {
+                albumId,
+                currentUser: auth.currentUser.uid,
+                isAuthenticated: !!auth.currentUser,
+                file: {
+                    name: file.name,
+                    size: file.size,
+                    type: file.type
+                }
             });
 
             const timestamp = new Date().getTime();
             const safeFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
             const fileName = `${timestamp}_${safeFileName}`;
-            
             const storagePath = `albums/${albumId}/${fileName}`;
+
             console.log('Ścieżka zapisu:', storagePath);
             
             const storageRef = ref(storage, storagePath);
-
-            // Dodaj metadane do pliku
+            
+            // Dodaj metadane
             const metadata = {
+                contentType: file.type,
                 customMetadata: {
-                    uploadedBy: auth.currentUser.uid,
                     albumId: albumId,
-                    timestamp: timestamp.toString()
+                    uploadedBy: auth.currentUser.uid,
+                    uploadedAt: new Date().toISOString()
                 }
             };
 
@@ -89,8 +84,7 @@ const AlbumView = ({ albumId, onBack }) => {
             console.log('Upload zakończony:', uploadTask);
             
             const photoUrl = await getDownloadURL(storageRef);
-            console.log('URL zdjęcia:', photoUrl);
-
+            
             const photoData = {
                 id: `photo_${timestamp}`,
                 url: photoUrl,
