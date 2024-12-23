@@ -18,9 +18,9 @@ const getOptimizedImageUrl = (originalUrl, width, isThumb = false) => {
     try {
         if (originalUrl.includes('firebasestorage.googleapis.com')) {
             const separator = originalUrl.includes('?') ? '&' : '?';
-            // Dla miniaturek obniżamy jakość do 50% i zmniejszamy rozmiar
+            // Dla miniaturek jeszcze bardziej obniżamy jakość i zmniejszamy rozmiar
             if (isThumb) {
-                return `${originalUrl}${separator}w=${width}&quality=50`;
+                return `${originalUrl}${separator}w=${width}&quality=40`; // Obniżamy jakość do 40%
             }
             // Dla pełnych zdjęć zachowujemy wysoką jakość
             return `${originalUrl}${separator}w=${width}&quality=85`;
