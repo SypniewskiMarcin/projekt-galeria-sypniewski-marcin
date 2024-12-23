@@ -7,6 +7,8 @@ const AlbumList = ({ albums, onAlbumClick }) => {
         let lastScrollY = window.scrollY;
         let lastScrollTime = Date.now();
         let scrollVelocity = 0;
+        let previousVelocity = 0;
+        let scrollTimeout;
 
         const handleMouseMove = (e) => {
             const badges = document.querySelectorAll('.album-privacy-badge');
@@ -24,40 +26,62 @@ const AlbumList = ({ albums, onAlbumClick }) => {
             const timeDiff = currentTime - lastScrollTime;
             const scrollDiff = Math.abs(window.scrollY - lastScrollY);
             
-            // Obliczamy prędkość scrollowania
-            scrollVelocity = scrollDiff / timeDiff;
+            // Płynniejsze obliczanie prędkości
+            scrollVelocity = Math.min(
+                scrollDiff / Math.max(timeDiff, 16), // Limit do 60fps
+                1.0
+            );
+            
+            // Dodajemy wygładzanie
+            scrollVelocity = scrollVelocity * 0.7 + previousVelocity * 0.3;
             
             const badges = document.querySelectorAll('.album-privacy-badge');
             badges.forEach(badge => {
                 const rect = badge.getBoundingClientRect();
                 const scrollProgress = (rect.top / window.innerHeight) * 100;
                 
-                // Mapujemy prędkość scrollowania na intensywność efektu (0.1 - 1.0)
-                const intensity = Math.min(Math.max(scrollVelocity * 10, 0.1), 1.0);
-                badge.style.setProperty('--scroll-velocity', intensity);
-                badge.style.setProperty('--scroll-y', `${scrollProgress}%`);
+                // Płynniejsze mapowanie intensywności
+                const intensity = Math.min(
+                    Math.max(scrollVelocity * 12, 0.1),
+                    1.0
+                );
                 
-                // Dodajemy klasę aktywności podczas szybkiego scrollowania
-                if (scrollVelocity > 0.1) {
-                    badge.classList.add('scroll-active');
-                } else {
-                    badge.classList.remove('scroll-active');
-                }
+                requestAnimationFrame(() => {
+                    badge.style.setProperty('--scroll-velocity', intensity);
+                    badge.style.setProperty('--scroll-y', `${scrollProgress}%`);
+                    
+                    if (scrollVelocity > 0.05) { // Niższy próg aktywacji
+                        badge.classList.add('scroll-active');
+                    } else {
+                        badge.classList.remove('scroll-active');
+                    }
+                });
             });
 
+            previousVelocity = scrollVelocity;
             lastScrollY = window.scrollY;
             lastScrollTime = currentTime;
             
-            // Wygaszamy efekt po zatrzymaniu scrollowania
-            setTimeout(() => {
-                if (Date.now() - lastScrollTime > 100) {
-                    scrollVelocity = 0;
-                    badges.forEach(badge => {
-                        badge.classList.remove('scroll-active');
-                        badge.style.setProperty('--scroll-velocity', '0');
-                    });
-                }
-            }, 100);
+            // Płynniejsze wygaszanie
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                const fadeOut = () => {
+                    scrollVelocity *= 0.85;
+                    if (scrollVelocity > 0.01) {
+                        badges.forEach(badge => {
+                            badge.style.setProperty('--scroll-velocity', scrollVelocity);
+                        });
+                        requestAnimationFrame(fadeOut);
+                    } else {
+                        scrollVelocity = 0;
+                        badges.forEach(badge => {
+                            badge.classList.remove('scroll-active');
+                            badge.style.setProperty('--scroll-velocity', '0');
+                        });
+                    }
+                };
+                requestAnimationFrame(fadeOut);
+            }, 50);
         };
 
         // Obsługa dotyku

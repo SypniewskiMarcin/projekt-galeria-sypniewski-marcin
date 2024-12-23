@@ -347,8 +347,9 @@
 /* Dodajemy style dla urządzeń dotykowych */
 @media (hover: none) {
     .album-privacy-badge {
-        transition: all 0.2s ease-out;
-        animation: none; /* Wyłączamy domyślną animację */
+        transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        animation: none;
+        will-change: transform, background-image, box-shadow;
     }
 
     /* Efekt podczas scrollowania */
@@ -356,12 +357,13 @@
         background-image: radial-gradient(
             circle at center,
             rgba(79, 70, 229, calc(0.3 * var(--scroll-velocity, 0))) 0%,
-            transparent calc(120px * var(--scroll-velocity, 0))
+            rgba(79, 70, 229, calc(0.15 * var(--scroll-velocity, 0))) 35%,
+            transparent calc(150px * var(--scroll-velocity, 0))
         );
-        transform: scale(calc(1 + var(--scroll-velocity, 0) * 0.05));
+        transform: scale(calc(1 + var(--scroll-velocity, 0) * 0.03));
         box-shadow: 
-            0 0 calc(20px * var(--scroll-velocity, 0)) rgba(79, 70, 229, calc(0.2 * var(--scroll-velocity, 0))),
-            0 0 calc(40px * var(--scroll-velocity, 0)) rgba(79, 70, 229, calc(0.1 * var(--scroll-velocity, 0)));
+            0 0 calc(30px * var(--scroll-velocity, 0)) rgba(79, 70, 229, calc(0.25 * var(--scroll-velocity, 0))),
+            0 0 calc(60px * var(--scroll-velocity, 0)) rgba(79, 70, 229, calc(0.15 * var(--scroll-velocity, 0)));
     }
 
     /* Dark mode */
@@ -369,12 +371,13 @@
         .album-privacy-badge.scroll-active {
             background-image: radial-gradient(
                 circle at center,
-                rgba(79, 70, 229, calc(0.4 * var(--scroll-velocity, 0))) 0%,
-                transparent calc(140px * var(--scroll-velocity, 0))
+                rgba(79, 70, 229, calc(0.45 * var(--scroll-velocity, 0))) 0%,
+                rgba(79, 70, 229, calc(0.25 * var(--scroll-velocity, 0))) 35%,
+                transparent calc(150px * var(--scroll-velocity, 0))
             );
             box-shadow: 
-                0 0 calc(25px * var(--scroll-velocity, 0)) rgba(79, 70, 229, calc(0.3 * var(--scroll-velocity, 0))),
-                0 0 calc(50px * var(--scroll-velocity, 0)) rgba(79, 70, 229, calc(0.15 * var(--scroll-velocity, 0)));
+                0 0 calc(35px * var(--scroll-velocity, 0)) rgba(79, 70, 229, calc(0.35 * var(--scroll-velocity, 0))),
+                0 0 calc(70px * var(--scroll-velocity, 0)) rgba(79, 70, 229, calc(0.2 * var(--scroll-velocity, 0)));
         }
     }
 }
