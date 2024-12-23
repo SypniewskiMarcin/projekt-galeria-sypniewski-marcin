@@ -1,8 +1,8 @@
 .albums-grid {
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    padding: 20px;
+    gap: 12px;
+    padding: 0;
     width: 100%;
     box-sizing: border-box;
 }
@@ -20,6 +20,7 @@
     box-sizing: border-box;
     align-items: center;
     position: relative;
+    cursor: pointer;
 }
 
 .album-thumbnail {
@@ -33,7 +34,7 @@
     align-items: center;
     justify-content: center;
     border: 1px solid #e2e8f0;
-    order: 2;
+    order: 0;
 }
 
 .album-cover-image {
@@ -140,8 +141,20 @@
     }
 }
 
-/* Mobile responsiveness */
+/* Responsywność */
+@media (max-width: 768px) {
+    .albums-grid {
+        padding: 0;
+        gap: 10px;
+    }
+}
+
 @media (max-width: 480px) {
+    .albums-grid {
+        padding: 0;
+        gap: 8px;
+    }
+
     .album-card {
         padding: 8px;
         gap: 12px;
