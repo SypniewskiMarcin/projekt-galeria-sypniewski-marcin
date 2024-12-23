@@ -1,15 +1,15 @@
 {
   "files": {
-    "main.css": "/projekt-galeria-sypniewski-marcin/static/css/main.6f10c213.css",
-    "main.js": "/projekt-galeria-sypniewski-marcin/static/js/main.90bd3ccc.js",
+    "main.css": "/projekt-galeria-sypniewski-marcin/static/css/main.021a3a1e.css",
+    "main.js": "/projekt-galeria-sypniewski-marcin/static/js/main.a21ecd7e.js",
     "static/js/453.db6de766.chunk.js": "/projekt-galeria-sypniewski-marcin/static/js/453.db6de766.chunk.js",
     "index.html": "/projekt-galeria-sypniewski-marcin/index.html",
-    "main.6f10c213.css.map": "/projekt-galeria-sypniewski-marcin/static/css/main.6f10c213.css.map",
-    "main.90bd3ccc.js.map": "/projekt-galeria-sypniewski-marcin/static/js/main.90bd3ccc.js.map",
+    "main.021a3a1e.css.map": "/projekt-galeria-sypniewski-marcin/static/css/main.021a3a1e.css.map",
+    "main.a21ecd7e.js.map": "/projekt-galeria-sypniewski-marcin/static/js/main.a21ecd7e.js.map",
     "453.db6de766.chunk.js.map": "/projekt-galeria-sypniewski-marcin/static/js/453.db6de766.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.6f10c213.css",
-    "static/js/main.90bd3ccc.js"
+    "static/css/main.021a3a1e.css",
+    "static/js/main.a21ecd7e.js"
   ]
 }
