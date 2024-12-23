@@ -7,6 +7,7 @@ import Alert from './Alert';
 import './AlbumView.css';
 import JSZip from 'jszip';
 import PaymentProcess from './PaymentProcess';
+import OptimizedImage from './OptimizedImage';
 
 const AlbumView = ({ albumId, onBack }) => {
     const [album, setAlbum] = useState(null);
@@ -416,18 +417,19 @@ const AlbumView = ({ albumId, onBack }) => {
                             className={`photo-item ${isSelectionMode ? 'selection-mode' : ''} ${
                                 selectedPhotos.has(photo.id) ? 'selected' : ''
                             }`}
-                            onClick={() => setSelectedImageIndex(index)}
                         >
-                            <img 
-                                src={photo.url} 
-                                alt={photo.description || `Zdjęcie ${index + 1}`}
-                                loading="lazy"
+                            <OptimizedImage
+                                src={photo.url}
+                                alt={`Zdjęcie ${index + 1}`}
+                                onClick={() => setSelectedImageIndex(index)}
+                                containerWidth={250}
+                                priority={index < 4}
                             />
                             {isSelectionMode && (
                                 <button
                                     className="selection-overlay"
                                     onClick={(e) => {
-                                        e.stopPropagation(); // Zapobiega otwieraniu podglądu przy kliknięciu w przycisk wyboru
+                                        e.stopPropagation();
                                         togglePhotoSelection(photo.id);
                                     }}
                                     aria-label={selectedPhotos.has(photo.id) ? 'Odznacz zdjęcie' : 'Zaznacz zdjęcie'}

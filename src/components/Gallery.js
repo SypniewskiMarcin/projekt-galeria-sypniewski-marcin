@@ -9,6 +9,7 @@ import CreateAlbum from './CreateAlbum'; // Importuj komponent do tworzenia albu
 import { db } from '../firebaseConfig';
 import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
 import AlbumView from './AlbumView'; // Importuj komponent AlbumView
+import OptimizedImage from './OptimizedImage';
 
 function Gallery({ user }) {
     const [selectedImageIndex, setSelectedImageIndex] = useState(null);
@@ -301,12 +302,13 @@ function Gallery({ user }) {
 
                     <div className="gallery">
                         {images.map((image, index) => (
-                            <div
-                                key={index}
-                                className="gallery-item"
-                                onClick={() => setSelectedImageIndex(index)}
-                            >
-                                <img src={image} alt={`Zdjęcie ${index + 1}`} />
+                            <div key={index} className="gallery-item">
+                                <OptimizedImage
+                                    src={image}
+                                    alt={`Zdjęcie ${index + 1}`}
+                                    containerWidth={400}
+                                    priority={index < 2} // Pierwsze dwa zdjęcia ładowane priorytetowo
+                                />
                             </div>
                         ))}
                     </div>
