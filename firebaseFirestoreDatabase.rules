@@ -43,7 +43,8 @@ service cloud.firestore {
     // Reguły dla settings
     match /settings/{document} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow write: if isAdmin(); 
+      
     }
   }
 }
