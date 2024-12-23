@@ -10,6 +10,7 @@ import { db } from '../firebaseConfig';
 import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
 import AlbumView from './AlbumView'; // Importuj komponent AlbumView
 import OptimizedImage from './OptimizedImage';
+import AlbumList from './AlbumList';
 
 function Gallery({ user }) {
     const [selectedImageIndex, setSelectedImageIndex] = useState(null);
@@ -64,11 +65,26 @@ function Gallery({ user }) {
                 where('isPublic', '==', true)
             );
             const publicSnapshot = await getDocs(publicQuery);
-            let allAlbums = publicSnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data(),
-                isPrivate: false
-            }));
+            let allAlbums = publicSnapshot.docs.map(doc => {
+                const albumData = doc.data();
+                console.log('Przetwarzanie albumu:', albumData.name);
+                
+                // Sprawdź czy album ma zdjęcia i ustaw okładkę
+                const coverPhoto = albumData.photos && albumData.photos.length > 0 
+                    ? albumData.photos[0].url 
+                    : null;
+
+                if (coverPhoto) {
+                    console.log('Album', albumData.name, 'ma okładkę:', coverPhoto);
+                }
+
+                return {
+                    id: doc.id,
+                    ...albumData,
+                    coverPhoto,
+                    isPrivate: false
+                };
+            });
 
             // Jeśli użytkownik jest zalogowany, dodaj jego prywatne albumy
             if (user) {
@@ -78,11 +94,19 @@ function Gallery({ user }) {
                     where('author.uid', '==', user.uid)
                 );
                 const privateSnapshot = await getDocs(privateQuery);
-                const privateAlbums = privateSnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data(),
-                    isPrivate: true
-                }));
+                const privateAlbums = privateSnapshot.docs.map(doc => {
+                    const albumData = doc.data();
+                    const coverPhoto = albumData.photos && albumData.photos.length > 0 
+                        ? albumData.photos[0].url 
+                        : null;
+                    
+                    return {
+                        id: doc.id,
+                        ...albumData,
+                        coverPhoto,
+                        isPrivate: true
+                    };
+                });
                 allAlbums = [...allAlbums, ...privateAlbums];
             }
 
@@ -111,7 +135,6 @@ function Gallery({ user }) {
             }
 
             setAlbums(allAlbums);
-            
         } catch (error) {
             console.error('Błąd podczas pobierania albumów:', error);
             setError('Wystąpił błąd podczas pobierania albumów');
@@ -151,6 +174,16 @@ function Gallery({ user }) {
     const indexOfLastAlbum = currentPage * albumsPerPage;
     const indexOfFirstAlbum = indexOfLastAlbum - albumsPerPage;
     const currentAlbums = albums.slice(indexOfFirstAlbum, indexOfLastAlbum);
+    console.log('Przekazywanie do AlbumList albumów:', {
+        total: albums.length,
+        currentPage,
+        albumsPerPage,
+        currentAlbums: currentAlbums.map(album => ({
+            id: album.id,
+            name: album.name,
+            hasCover: !!album.coverPhoto
+        }))
+    });
     const totalPages = Math.ceil(albums.length / albumsPerPage);
 
     const handlePageChange = (pageNumber) => {
@@ -255,48 +288,10 @@ function Gallery({ user }) {
                         </div>
 
                         <div className="albums-grid">
-                            {currentAlbums.map(album => (
-                                <div 
-                                    key={album.id} 
-                                    className="album-card"
-                                    onClick={() => handleAlbumClick(album.id)}
-                                    role="button"
-                                    tabIndex={0}
-                                >
-                                    {album.isPrivate && (
-                                        <span className="album-privacy-badge">
-                                            Prywatny
-                                        </span>
-                                    )}
-                                    <div className="album-thumbnail">
-                                        <img
-                                            src="/placeholder-album.jpg"
-                                            alt={`Okładka albumu ${album.name}`}
-                                            onError={(e) => {
-                                                e.target.style.display = 'none';
-                                            }}
-                                        />
-                                    </div>
-                                    <div className="album-content">
-                                        <h3>{album.name}</h3>
-                                        <p>Autor: {album.author.displayName}</p>
-                                        {album.location && <p>Lokalizacja: {album.location}</p>}
-                                        <p>Data publikacji: {new Date(album.createdAt).toLocaleDateString()}</p>
-                                        {album.creationDate && (
-                                            <p>Data wydarzenia: {new Date(album.creationDate).toLocaleDateString()}</p>
-                                        )}
-                                        {album.categories && (
-                                            <div className="album-categories">
-                                                {album.categories.map(category => (
-                                                    <span key={category} className="category-tag">
-                                                        {category}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
+                            <AlbumList 
+                                albums={currentAlbums} 
+                                onAlbumClick={handleAlbumClick} 
+                            />
                         </div>
                     </div>
 
