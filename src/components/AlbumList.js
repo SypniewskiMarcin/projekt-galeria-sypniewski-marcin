@@ -1,8 +1,38 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import OptimizedImage from './OptimizedImage';
 import './AlbumList.css';
 
 const AlbumList = ({ albums, onAlbumClick }) => {
+    useEffect(() => {
+        const handleMouseMove = (e) => {
+            const badges = document.querySelectorAll('.album-privacy-badge');
+            badges.forEach(badge => {
+                const rect = badge.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                badge.style.setProperty('--mouse-x', `${x}%`);
+                badge.style.setProperty('--mouse-y', `${y}%`);
+            });
+        };
+
+        const handleScroll = () => {
+            const badges = document.querySelectorAll('.album-privacy-badge');
+            badges.forEach(badge => {
+                const rect = badge.getBoundingClientRect();
+                const scrollProgress = (rect.top / window.innerHeight) * 100;
+                badge.style.setProperty('--scroll-y', `${scrollProgress}%`);
+            });
+        };
+
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('scroll', handleScroll);
+
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('scroll', handleScroll);
+        };
+    }, []);
+
     console.log('AlbumList renderuje się z', albums.length, 'albumami');
     
     return (
