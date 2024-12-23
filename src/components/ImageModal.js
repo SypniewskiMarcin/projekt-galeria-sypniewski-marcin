@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTimes, faChevronLeft, faChevronRight } from "@fortawesome/free-solid-svg-icons";
 import './ImageModal.css';
-import OptimizedImage from './OptimizedImage';
 
 const ImageModal = ({ imageUrl, onClose, onPrev, onNext }) => {
     useEffect(() => {
@@ -25,13 +24,7 @@ const ImageModal = ({ imageUrl, onClose, onPrev, onNext }) => {
                 <button className="modal-nav modal-prev" onClick={onPrev}>
                     <FontAwesomeIcon icon={faChevronLeft} />
                 </button>
-                <OptimizedImage
-                    src={imageUrl}
-                    alt="Powiększone zdjęcie"
-                    containerWidth={1200}
-                    isThumb={false}
-                    priority={true}
-                />
+                <img src={imageUrl} alt="Powiększone zdjęcie" />
                 <button className="modal-nav modal-next" onClick={onNext}>
                     <FontAwesomeIcon icon={faChevronRight} />
                 </button>
