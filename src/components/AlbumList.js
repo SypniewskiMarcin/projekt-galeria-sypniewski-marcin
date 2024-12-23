@@ -24,12 +24,45 @@ const AlbumList = ({ albums, onAlbumClick }) => {
             });
         };
 
+        // Obsługa dotyku
+        const handleTouch = (e) => {
+            const touch = e.touches[0];
+            const badges = document.querySelectorAll('.album-privacy-badge');
+            badges.forEach(badge => {
+                const rect = badge.getBoundingClientRect();
+                const x = ((touch.clientX - rect.left) / rect.width) * 100;
+                const y = ((touch.clientY - rect.top) / rect.height) * 100;
+                badge.style.setProperty('--mouse-x', `${x}%`);
+                badge.style.setProperty('--mouse-y', `${y}%`);
+                // Dodajemy klasę dla efektu dotykowego
+                badge.classList.add('touch-active');
+            });
+        };
+
+        // Zakończenie dotyku
+        const handleTouchEnd = () => {
+            const badges = document.querySelectorAll('.album-privacy-badge');
+            badges.forEach(badge => {
+                // Usuwamy klasę efektu dotykowego
+                badge.classList.remove('touch-active');
+                // Resetujemy pozycję do środka
+                badge.style.setProperty('--mouse-x', '50%');
+                badge.style.setProperty('--mouse-y', '50%');
+            });
+        };
+
         window.addEventListener('mousemove', handleMouseMove);
         window.addEventListener('scroll', handleScroll);
+        window.addEventListener('touchstart', handleTouch);
+        window.addEventListener('touchmove', handleTouch);
+        window.addEventListener('touchend', handleTouchEnd);
 
         return () => {
             window.removeEventListener('mousemove', handleMouseMove);
             window.removeEventListener('scroll', handleScroll);
+            window.removeEventListener('touchstart', handleTouch);
+            window.removeEventListener('touchmove', handleTouch);
+            window.removeEventListener('touchend', handleTouchEnd);
         };
     }, []);
 

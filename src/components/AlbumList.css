@@ -343,3 +343,65 @@
         filter: blur(20px) brightness(1.2);
     }
 }
+
+/* Dodajemy style dla urządzeń dotykowych */
+@media (hover: none) {
+    .album-privacy-badge {
+        /* Domyślna animacja dla urządzeń dotykowych */
+        animation: touchPulse 3s ease-in-out infinite;
+    }
+
+    @keyframes touchPulse {
+        0%, 100% {
+            background-image: radial-gradient(
+                circle at 50% 50%,
+                rgba(255, 255, 255, 0.25) 0%,
+                transparent 120px
+            );
+        }
+        50% {
+            background-image: radial-gradient(
+                circle at 50% 50%,
+                rgba(255, 255, 255, 0.35) 0%,
+                transparent 140px
+            );
+        }
+    }
+
+    /* Styl aktywowany przy dotknięciu */
+    .album-privacy-badge.touch-active {
+        transform: translateY(-1px) scale(1.02);
+        background-color: rgba(79, 70, 229, 0.9);
+        animation: none;
+    }
+
+    .album-privacy-badge.touch-active::before,
+    .album-privacy-badge.touch-active::after {
+        opacity: 1;
+        transition: all 0.2s ease-out;
+    }
+}
+
+/* Dark mode dla urządzeń dotykowych */
+@media (hover: none) and (prefers-color-scheme: dark) {
+    .album-privacy-badge {
+        animation: touchPulseDark 3s ease-in-out infinite;
+    }
+
+    @keyframes touchPulseDark {
+        0%, 100% {
+            background-image: radial-gradient(
+                circle at 50% 50%,
+                rgba(79, 70, 229, 0.3) 0%,
+                transparent 120px
+            );
+        }
+        50% {
+            background-image: radial-gradient(
+                circle at 50% 50%,
+                rgba(79, 70, 229, 0.4) 0%,
+                transparent 140px
+            );
+        }
+    }
+}
