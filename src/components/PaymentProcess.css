@@ -1,0 +1,220 @@
+.close-button {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 30px;
+    height: 30px;
+    border: none;
+    background: none;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.close-button:hover {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+.close-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.payment-process {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1100;
+}
+
+.payment-container {
+    position: relative;
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.payment-details {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f5f5f5;
+    border-radius: 8px;
+}
+
+.payment-methods {
+    display: flex;
+    gap: 12px;
+    margin: 20px 0;
+}
+
+.payment-method {
+    flex: 1;
+    padding: 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    background: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.payment-method.selected {
+    border-color: #4285f4;
+    background: #4285f4;
+    color: white;
+}
+
+.payment-method:not(:disabled):hover {
+    border-color: #357ae8;
+    background-color: rgba(66, 133, 244, 0.1);
+}
+
+.payment-method:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    border-color: #e2e8f0;
+}
+
+.payment-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.process-payment,
+.cancel-payment,
+.download-button {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.process-payment {
+    background: #10b981;
+    color: white;
+}
+
+.process-payment:hover {
+    background: #059669;
+}
+
+.process-payment:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+}
+
+.cancel-payment {
+    background: #e2e8f0;
+}
+
+.download-button {
+    background: #10b981;
+    color: white;
+    width: 100%;
+}
+
+.payment-completed {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.completed-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.close-purchase-button {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background: #e2e8f0;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.close-purchase-button:hover {
+    background: #cbd5e1;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+    .payment-container {
+        background: #2a2a2a;
+        color: #e0e0e0;
+    }
+
+    .payment-details {
+        background: #333;
+    }
+
+    .payment-method {
+        border-color: #444;
+        color: #e0e0e0;
+    }
+
+    .cancel-payment {
+        background: #444;
+        color: #e0e0e0;
+    }
+
+    .close-button {
+        color: #999;
+    }
+
+    .close-button:hover {
+        background-color: #333;
+        color: #fff;
+    }
+
+    .close-purchase-button {
+        background: #444;
+        color: #e0e0e0;
+    }
+
+    .close-purchase-button:hover {
+        background: #555;
+    }
+
+    .process-payment {
+        background: #059669;
+    }
+
+    .process-payment:hover {
+        background: #047857;
+    }
+
+    .process-payment:disabled {
+        background: #4b5563;
+    }
+
+    .payment-method.selected {
+        border-color: #357ae8;
+        background: #357ae8;
+    }
+
+    .payment-method:not(:disabled):hover {
+        border-color: #1976D2;
+        background-color: rgba(66, 133, 244, 0.2);
+    }
+} 

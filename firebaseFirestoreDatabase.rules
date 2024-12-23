@@ -46,5 +46,16 @@ service cloud.firestore {
       allow write: if isAdmin(); 
       
     }
+
+    // Reguły dla transactions
+    match /transactions/{transactionId} {
+      allow read: if request.auth != null && 
+        (resource.data.buyerId == request.auth.uid || 
+         resource.data.sellerId == request.auth.uid || 
+         isAdmin());
+      allow create: if request.auth != null && 
+        request.resource.data.buyerId == request.auth.uid;
+      allow update: if false; // Transakcje nie mogą być modyfikowane
+    }
   }
 }

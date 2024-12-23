@@ -173,37 +173,110 @@
     margin-top: 16px;
 }
 
-.download-button,
-.select-button,
-.download-selected-button,
-.cancel-selection-button {
+/* Wspólne style dla wszystkich przycisków w album-actions */
+.album-actions button {
     padding: 8px 16px;
     border-radius: 6px;
     border: none;
     cursor: pointer;
     font-weight: 500;
     transition: all 0.2s ease;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    min-width: 140px;
+    font-size: 14px;
 }
 
-.download-button {
-    background-color: #4CAF50;
+.purchase-button,
+.purchase-selected-button,
+.select-button {
     color: white;
+}
+
+.purchase-button,
+.purchase-selected-button {
+    background-color: #10b981;
 }
 
 .select-button {
     background-color: #2196F3;
-    color: white;
 }
 
-.download-selected-button {
-    background-color: #4CAF50;
-    color: white;
+.purchase-button:hover,
+.purchase-selected-button:hover {
+    background-color: #059669;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.select-button:hover {
+    background-color: #1976D2;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .cancel-selection-button {
+    min-width: auto;
+    padding: 8px;
     background-color: #f44336;
     color: white;
-    padding: 8px 12px;
+}
+
+/* Aktualizacja styli dla kontenera akcji */
+.album-actions {
+    display: flex;
+    gap: 12px;
+    margin: 20px 0;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+/* Style dla trybu ciemnego */
+@media (prefers-color-scheme: dark) {
+    .purchase-button,
+    .purchase-selected-button {
+        background-color: #059669;
+    }
+
+    .select-button {
+        background-color: #1976D2;
+    }
+
+    .purchase-button:hover,
+    .purchase-selected-button:hover {
+        background-color: #047857;
+    }
+
+    .select-button:hover {
+        background-color: #1565C0;
+    }
+
+    /* Dodaj efekt poświaty w trybie ciemnym */
+    .album-actions button:not(:disabled):hover {
+        box-shadow: 0 0 12px rgba(255, 255, 255, 0.1);
+    }
+}
+
+/* Style dla różnych rozmiarów ekranu */
+@media (max-width: 640px) {
+    .album-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .album-actions button {
+        width: 100%;
+        height: 44px;
+    }
+
+    .cancel-selection-button {
+        width: auto;
+        align-self: flex-end;
+    }
 }
 
 .photo-item {
@@ -267,5 +340,92 @@
 
     .cancel-selection-button {
         background-color: #d32f2f;
+    }
+}
+
+.purchase-button,
+.purchase-selected-button {
+    background-color: #10b981;
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 120px;
+    height: 40px;
+}
+
+.purchase-button:hover,
+.purchase-selected-button:hover {
+    background-color: #059669;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.purchase-button:active,
+.purchase-selected-button:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+.purchase-button:disabled,
+.purchase-selected-button:disabled {
+    background-color: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Aktualizacja styli dla kontenera akcji */
+.album-actions {
+    display: flex;
+    gap: 12px;
+    margin: 20px 0;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+/* Style dla trybu ciemnego */
+@media (prefers-color-scheme: dark) {
+    .purchase-button,
+    .purchase-selected-button {
+        background-color: #059669;
+    }
+
+    .purchase-button:hover,
+    .purchase-selected-button:hover {
+        background-color: #047857;
+    }
+
+    .purchase-button:disabled,
+    .purchase-selected-button:disabled {
+        background-color: #4b5563;
+    }
+
+    /* Dodaj efekt poświaty w trybie ciemnym */
+    .purchase-button:not(:disabled):hover,
+    .purchase-selected-button:not(:disabled):hover {
+        box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+    }
+}
+
+/* Style dla różnych rozmiarów ekranu */
+@media (max-width: 640px) {
+    .album-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .purchase-button,
+    .purchase-selected-button {
+        width: 100%;
+        height: 44px; /* Większa wysokość dla małych ekranów */
     }
 } 

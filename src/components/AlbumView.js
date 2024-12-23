@@ -6,6 +6,7 @@ import ImageModal from './ImageModal';
 import Alert from './Alert';
 import './AlbumView.css';
 import JSZip from 'jszip';
+import PaymentProcess from './PaymentProcess';
 
 const AlbumView = ({ albumId, onBack }) => {
     const [album, setAlbum] = useState(null);
@@ -18,6 +19,8 @@ const AlbumView = ({ albumId, onBack }) => {
     const [isAuthor, setIsAuthor] = useState(false);
     const [isSelectionMode, setIsSelectionMode] = useState(false);
     const [selectedPhotos, setSelectedPhotos] = useState(new Set());
+    const [showPaymentProcess, setShowPaymentProcess] = useState(false);
+    const [isFullAlbumPurchase, setIsFullAlbumPurchase] = useState(false);
 
     useEffect(() => {
         const fetchAlbum = async () => {
@@ -252,6 +255,17 @@ const AlbumView = ({ albumId, onBack }) => {
         });
     };
 
+    // Dodaj funkcje obsługujące zakup
+    const handlePurchaseSelected = () => {
+        setIsFullAlbumPurchase(false);
+        setShowPaymentProcess(true);
+    };
+
+    const handlePurchaseAlbum = () => {
+        setIsFullAlbumPurchase(true);
+        setShowPaymentProcess(true);
+    };
+
     if (loading) {
         return <div className="loading">Ładowanie albumu...</div>;
     }
@@ -305,6 +319,45 @@ const AlbumView = ({ albumId, onBack }) => {
                                     disabled={selectedPhotos.size === 0}
                                 >
                                     Pobierz wybrane ({selectedPhotos.size})
+                                </button>
+                                <button 
+                                    onClick={() => {
+                                        setIsSelectionMode(false);
+                                        setSelectedPhotos(new Set());
+                                    }}
+                                    className="cancel-selection-button"
+                                >
+                                    ✕
+                                </button>
+                            </>
+                        )}
+                    </div>
+                )}
+
+                {album?.isCommercial && (
+                    <div className="album-actions">
+                        <button 
+                            onClick={handlePurchaseAlbum}
+                            className="purchase-button"
+                        >
+                            Kup cały album
+                        </button>
+                        
+                        {!isSelectionMode ? (
+                            <button 
+                                onClick={() => setIsSelectionMode(true)}
+                                className="select-button"
+                            >
+                                Wybierz zdjęcia do zakupu
+                            </button>
+                        ) : (
+                            <>
+                                <button 
+                                    onClick={handlePurchaseSelected}
+                                    className="purchase-selected-button"
+                                    disabled={selectedPhotos.size === 0}
+                                >
+                                    Kup wybrane ({selectedPhotos.size})
                                 </button>
                                 <button 
                                     onClick={() => {
@@ -411,6 +464,19 @@ const AlbumView = ({ albumId, onBack }) => {
                     message={error}
                     type="error"
                     onClose={() => setError(null)}
+                />
+            )}
+
+            {showPaymentProcess && (
+                <PaymentProcess
+                    selectedPhotos={selectedPhotos}
+                    album={album}
+                    onClose={() => {
+                        setShowPaymentProcess(false);
+                        setIsSelectionMode(false);
+                        setSelectedPhotos(new Set());
+                    }}
+                    isFullAlbum={isFullAlbumPurchase}
                 />
             )}
         </div>
