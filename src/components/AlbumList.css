@@ -347,38 +347,35 @@
 /* Dodajemy style dla urządzeń dotykowych */
 @media (hover: none) {
     .album-privacy-badge {
-        /* Domyślna animacja dla urządzeń dotykowych */
-        animation: touchPulse 3s ease-in-out infinite;
-    }
-
-    @keyframes touchPulse {
-        0%, 100% {
-            background-image: radial-gradient(
-                circle at 50% 50%,
-                rgba(255, 255, 255, 0.25) 0%,
-                transparent 120px
-            );
-        }
-        50% {
-            background-image: radial-gradient(
-                circle at 50% 50%,
-                rgba(255, 255, 255, 0.35) 0%,
-                transparent 140px
-            );
-        }
-    }
-
-    /* Styl aktywowany przy dotknięciu */
-    .album-privacy-badge.touch-active {
-        transform: translateY(-1px) scale(1.02);
-        background-color: rgba(79, 70, 229, 0.9);
-        animation: none;
-    }
-
-    .album-privacy-badge.touch-active::before,
-    .album-privacy-badge.touch-active::after {
-        opacity: 1;
         transition: all 0.2s ease-out;
+        animation: none; /* Wyłączamy domyślną animację */
+    }
+
+    /* Efekt podczas scrollowania */
+    .album-privacy-badge.scroll-active {
+        background-image: radial-gradient(
+            circle at center,
+            rgba(79, 70, 229, calc(0.3 * var(--scroll-velocity, 0))) 0%,
+            transparent calc(120px * var(--scroll-velocity, 0))
+        );
+        transform: scale(calc(1 + var(--scroll-velocity, 0) * 0.05));
+        box-shadow: 
+            0 0 calc(20px * var(--scroll-velocity, 0)) rgba(79, 70, 229, calc(0.2 * var(--scroll-velocity, 0))),
+            0 0 calc(40px * var(--scroll-velocity, 0)) rgba(79, 70, 229, calc(0.1 * var(--scroll-velocity, 0)));
+    }
+
+    /* Dark mode */
+    @media (prefers-color-scheme: dark) {
+        .album-privacy-badge.scroll-active {
+            background-image: radial-gradient(
+                circle at center,
+                rgba(79, 70, 229, calc(0.4 * var(--scroll-velocity, 0))) 0%,
+                transparent calc(140px * var(--scroll-velocity, 0))
+            );
+            box-shadow: 
+                0 0 calc(25px * var(--scroll-velocity, 0)) rgba(79, 70, 229, calc(0.3 * var(--scroll-velocity, 0))),
+                0 0 calc(50px * var(--scroll-velocity, 0)) rgba(79, 70, 229, calc(0.15 * var(--scroll-velocity, 0)));
+        }
     }
 }
 

@@ -4,6 +4,10 @@ import './AlbumList.css';
 
 const AlbumList = ({ albums, onAlbumClick }) => {
     useEffect(() => {
+        let lastScrollY = window.scrollY;
+        let lastScrollTime = Date.now();
+        let scrollVelocity = 0;
+
         const handleMouseMove = (e) => {
             const badges = document.querySelectorAll('.album-privacy-badge');
             badges.forEach(badge => {
@@ -16,12 +20,44 @@ const AlbumList = ({ albums, onAlbumClick }) => {
         };
 
         const handleScroll = () => {
+            const currentTime = Date.now();
+            const timeDiff = currentTime - lastScrollTime;
+            const scrollDiff = Math.abs(window.scrollY - lastScrollY);
+            
+            // Obliczamy prędkość scrollowania
+            scrollVelocity = scrollDiff / timeDiff;
+            
             const badges = document.querySelectorAll('.album-privacy-badge');
             badges.forEach(badge => {
                 const rect = badge.getBoundingClientRect();
                 const scrollProgress = (rect.top / window.innerHeight) * 100;
+                
+                // Mapujemy prędkość scrollowania na intensywność efektu (0.1 - 1.0)
+                const intensity = Math.min(Math.max(scrollVelocity * 10, 0.1), 1.0);
+                badge.style.setProperty('--scroll-velocity', intensity);
                 badge.style.setProperty('--scroll-y', `${scrollProgress}%`);
+                
+                // Dodajemy klasę aktywności podczas szybkiego scrollowania
+                if (scrollVelocity > 0.1) {
+                    badge.classList.add('scroll-active');
+                } else {
+                    badge.classList.remove('scroll-active');
+                }
             });
+
+            lastScrollY = window.scrollY;
+            lastScrollTime = currentTime;
+            
+            // Wygaszamy efekt po zatrzymaniu scrollowania
+            setTimeout(() => {
+                if (Date.now() - lastScrollTime > 100) {
+                    scrollVelocity = 0;
+                    badges.forEach(badge => {
+                        badge.classList.remove('scroll-active');
+                        badge.style.setProperty('--scroll-velocity', '0');
+                    });
+                }
+            }, 100);
         };
 
         // Obsługa dotyku
@@ -52,7 +88,7 @@ const AlbumList = ({ albums, onAlbumClick }) => {
         };
 
         window.addEventListener('mousemove', handleMouseMove);
-        window.addEventListener('scroll', handleScroll);
+        window.addEventListener('scroll', handleScroll, { passive: true });
         window.addEventListener('touchstart', handleTouch);
         window.addEventListener('touchmove', handleTouch);
         window.addEventListener('touchend', handleTouchEnd);
