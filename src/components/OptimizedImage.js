@@ -8,7 +8,8 @@ const OptimizedImage = ({
     onClick, 
     className = '', 
     containerWidth = 300,
-    priority = false 
+    priority = false,
+    isThumb = true
 }) => {
     const [isLoaded, setIsLoaded] = useState(false);
     const [isFullImageLoaded, setIsFullImageLoaded] = useState(false);
@@ -63,7 +64,7 @@ const OptimizedImage = ({
     }, [src, priority]);
 
     const thumbnailSrc = dimensions.width ? 
-        getOptimizedImageUrl(src, dimensions.width) : 
+        getOptimizedImageUrl(src, dimensions.width, isThumb) : 
         src;
 
     const handleThumbnailLoad = () => {

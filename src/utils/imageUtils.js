@@ -14,12 +14,15 @@ const calculateOptimalDimensions = (screenWidth, screenHeight, containerWidth, d
 };
 
 // Funkcja do modyfikacji URL obrazu z Firebase Storage
-const getOptimizedImageUrl = (originalUrl, width) => {
+const getOptimizedImageUrl = (originalUrl, width, isThumb = false) => {
     try {
-        // Sprawdź czy URL jest z Firebase Storage
         if (originalUrl.includes('firebasestorage.googleapis.com')) {
-            // Dodaj parametry do URL Firebase Storage
             const separator = originalUrl.includes('?') ? '&' : '?';
+            // Dla miniaturek obniżamy jakość do 50% i zmniejszamy rozmiar
+            if (isThumb) {
+                return `${originalUrl}${separator}w=${width}&quality=50`;
+            }
+            // Dla pełnych zdjęć zachowujemy wysoką jakość
             return `${originalUrl}${separator}w=${width}&quality=85`;
         }
         return originalUrl;
