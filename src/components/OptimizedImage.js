@@ -7,7 +7,8 @@ const OptimizedImage = ({
     alt, 
     onClick, 
     className = '', 
-    containerWidth = 300,
+    containerWidth,
+    naturalAspectRatio = false,
     priority = false,
     isThumb = true
 }) => {
@@ -20,63 +21,42 @@ const OptimizedImage = ({
 
     useEffect(() => {
         const calculateDimensions = () => {
-            const { width, height } = calculateOptimalDimensions(
-                window.innerWidth,
-                window.innerHeight,
-                containerWidth,
-                window.devicePixelRatio
-            );
-            setDimensions({ width, height });
+            const img = new Image();
+            img.src = src;
+            img.onload = () => {
+                const aspectRatio = img.height / img.width;
+                const originalWidth = img.width * 0.4; // Kompresja do 40% oryginalnej szerokości
+                const originalHeight = img.height * 0.4; // Kompresja do 40% oryginalnej wysokości
+
+                setDimensions({
+                    width: originalWidth,
+                    height: originalHeight,
+                    aspectRatio: aspectRatio
+                });
+            };
         };
 
         calculateDimensions();
         window.addEventListener('resize', calculateDimensions);
 
         return () => window.removeEventListener('resize', calculateDimensions);
-    }, [containerWidth]);
-
-    useEffect(() => {
-        if (!priority) {
-            observerRef.current = new IntersectionObserver(
-                (entries) => {
-                    if (entries[0].isIntersecting) {
-                        preloadImage(src)
-                            .then(() => {
-                                setIsFullImageLoaded(true);
-                                observerRef.current?.disconnect();
-                            })
-                            .catch(console.error);
-                    }
-                },
-                { rootMargin: '100px' }
-            );
-
-            if (imageRef.current) {
-                observerRef.current.observe(imageRef.current);
-            }
-        } else {
-            preloadImage(src)
-                .then(() => setIsFullImageLoaded(true))
-                .catch(console.error);
-        }
-
-        return () => observerRef.current?.disconnect();
-    }, [src, priority]);
+    }, [src]);
 
     const thumbnailSrc = dimensions.width ? 
-        getOptimizedImageUrl(src, dimensions.width, isThumb) : 
+        getOptimizedImageUrl(src, dimensions.width, isThumb, naturalAspectRatio) : 
         src;
-
-    const handleThumbnailLoad = () => {
-        setIsLoaded(true);
-        setThumbnailLoaded(true);
-    };
 
     return (
         <div 
             ref={imageRef}
-            className={`optimized-image-container ${className}`}
+            className={`optimized-image-container ${className} ${
+                naturalAspectRatio ? 'natural-ratio' : ''
+            }`}
             onClick={onClick}
+            style={naturalAspectRatio ? {
+                height: '100%',
+                width: '100%'
+            } : undefined}
         >
             <img
                 src={thumbnailSrc}
@@ -85,7 +65,7 @@ const OptimizedImage = ({
                     isFullImageLoaded ? 'fade-out' : ''
                 }`}
                 loading="lazy"
-                onLoad={handleThumbnailLoad}
+                onLoad={() => setThumbnailLoaded(true)}
             />
             {isFullImageLoaded && (
                 <img

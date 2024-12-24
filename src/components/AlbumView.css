@@ -412,4 +412,148 @@
         width: 100%;
         height: 44px; /* Większa wysokość dla małych ekranów */
     }
+}
+
+/* Istniejące style dla widoku kwadratowego */
+.album-photos.square-view {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 16px;
+    padding: 16px;
+}
+
+.square-view .photo-item {
+    aspect-ratio: 1;
+}
+
+/* Style dla widoku naturalnego */
+.album-photos.natural-view {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 16px;
+    width: 100%;
+}
+
+.natural-view .photo-item {
+    position: relative;
+    margin: 0;
+    overflow: hidden;
+    border-radius: 8px;
+    flex-grow: 1;
+    height: auto;
+}
+
+/* Dostosowanie szerokości na podstawie proporcji */
+.natural-view .photo-item.portrait {
+    flex-basis: 180px;
+    height: auto;
+}
+
+.natural-view .photo-item.landscape {
+    flex-basis: 360px;
+    height: auto;
+}
+
+/* Zapobieganie rozciąganiu ostatniego wiersza */
+.natural-view::after {
+    content: '';
+    flex-grow: 999;
+    flex-basis: 240px;
+}
+
+/* Kontener zdjęcia */
+.natural-view .photo-item .optimized-image-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.natural-view .photo-item img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+/* Responsywność */
+@media (max-width: 1400px) {
+    .natural-view .photo-item {
+        height: auto;
+    }
+}
+
+@media (max-width: 1200px) {
+    .natural-view .photo-item {
+        height: auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .natural-view {
+        gap: 6px;
+    }
+    .natural-view .photo-item {
+        height: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .natural-view {
+        gap: 4px;
+    }
+    .natural-view .photo-item {
+        height: auto;
+    }
+}
+
+/* Hover efekt */
+.natural-view .photo-item:hover img {
+    transform: scale(1.05);
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+    .natural-view .photo-item {
+        background-color: #1a1a1a;
+    }
+}
+
+/* Style dla przełącznika widoku */
+.view-toggle {
+    margin: 16px 0;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.view-select {
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    background-color: white;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.view-select:hover {
+    border-color: #cbd5e0;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+    .view-select {
+        background-color: #2d3748;
+        border-color: #4a5568;
+        color: #e2e8f0;
+    }
+
+    .view-select:hover {
+        border-color: #718096;
+    }
 } 

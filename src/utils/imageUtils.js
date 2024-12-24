@@ -14,16 +14,18 @@ const calculateOptimalDimensions = (screenWidth, screenHeight, containerWidth, d
 };
 
 // Funkcja do modyfikacji URL obrazu z Firebase Storage
-const getOptimizedImageUrl = (originalUrl, width, isThumb = false) => {
+const getOptimizedImageUrl = (originalUrl, width, isThumb = false, naturalAspectRatio = false) => {
     try {
         if (originalUrl.includes('firebasestorage.googleapis.com')) {
             const separator = originalUrl.includes('?') ? '&' : '?';
-            // Dla miniaturek jeszcze bardziej obniżamy jakość i zmniejszamy rozmiar
-            if (isThumb) {
-                return `${originalUrl}${separator}w=${width}&quality=40`; // Obniżamy jakość do 40%
+            
+            // Dla naturalnych proporcji nie wymuszamy kwadratu
+            if (naturalAspectRatio) {
+                return `${originalUrl}${separator}w=${width}&quality=${isThumb ? '40' : '85'}`;
             }
-            // Dla pełnych zdjęć zachowujemy wysoką jakość
-            return `${originalUrl}${separator}w=${width}&quality=85`;
+            
+            // Dla kwadratów dodajemy crop
+            return `${originalUrl}${separator}w=${width}&h=${width}&quality=${isThumb ? '40' : '85'}&fit=crop`;
         }
         return originalUrl;
     } catch (error) {

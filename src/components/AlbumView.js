@@ -4,6 +4,7 @@ import { doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import ImageModal from './ImageModal';
 import Alert from './Alert';
+import ViewToggle from './ViewToggle';
 import './AlbumView.css';
 import JSZip from 'jszip';
 import PaymentProcess from './PaymentProcess';
@@ -22,6 +23,7 @@ const AlbumView = ({ albumId, onBack }) => {
     const [selectedPhotos, setSelectedPhotos] = useState(new Set());
     const [showPaymentProcess, setShowPaymentProcess] = useState(false);
     const [isFullAlbumPurchase, setIsFullAlbumPurchase] = useState(false);
+    const [viewMode, setViewMode] = useState('square'); // 'square' lub 'natural'
 
     useEffect(() => {
         const fetchAlbum = async () => {
@@ -373,6 +375,10 @@ const AlbumView = ({ albumId, onBack }) => {
                         )}
                     </div>
                 )}
+                <ViewToggle 
+                    currentView={viewMode} 
+                    onViewChange={setViewMode}
+                />
             </div>
 
             {isAuthor && (
@@ -410,7 +416,7 @@ const AlbumView = ({ albumId, onBack }) => {
             )}
 
             {album?.photos?.length > 0 ? (
-                <div className="album-photos">
+                <div className={`album-photos ${viewMode}-view`}>
                     {album.photos.map((photo, index) => (
                         <div 
                             key={photo.id} 
@@ -422,7 +428,8 @@ const AlbumView = ({ albumId, onBack }) => {
                                 src={photo.url}
                                 alt={`Zdjęcie ${index + 1}`}
                                 onClick={() => setSelectedImageIndex(index)}
-                                containerWidth={250}
+                                containerWidth={viewMode === 'square' ? 250 : undefined}
+                                naturalAspectRatio={viewMode === 'natural'}
                                 priority={index < 4}
                             />
                             {isSelectionMode && (
