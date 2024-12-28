@@ -1,0 +1,34 @@
+.view-toggle {
+    display: flex;
+    gap: var(--spacing-2);
+    margin-bottom: var(--spacing-4);
+}
+
+.toggle-btn {
+    padding: var(--spacing-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.toggle-btn:hover {
+    background: var(--color-border);
+}
+
+.toggle-btn.active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.toggle-btn svg {
+    display: block;
+    width: 24px;
+    height: 24px;
+    fill: var(--color-text);
+}
+
+.toggle-btn.active svg {
+    fill: white;
+} 
