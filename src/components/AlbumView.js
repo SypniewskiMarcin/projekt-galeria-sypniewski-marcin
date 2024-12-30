@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db, storage, auth } from '../firebaseConfig';
-import { doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, arrayUnion, collection, getDocs } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import ImageModal from './ImageModal';
 import Alert from './Alert';
@@ -24,6 +24,7 @@ const AlbumView = ({ albumId, onBack }) => {
     const [showPaymentProcess, setShowPaymentProcess] = useState(false);
     const [isFullAlbumPurchase, setIsFullAlbumPurchase] = useState(false);
     const [viewMode, setViewMode] = useState('square'); // 'square' lub 'natural'
+    const [photos, setPhotos] = useState([]);
 
     useEffect(() => {
         const fetchAlbum = async () => {
@@ -52,6 +53,47 @@ const AlbumView = ({ albumId, onBack }) => {
 
         fetchAlbum();
     }, [albumId]);
+
+    const fetchPhotos = async () => {
+        try {
+            const photosRef = collection(db, 'albums', albumId, 'photos');
+            const photosSnapshot = await getDocs(photosRef);
+            
+            const photoPromises = photosSnapshot.docs.map(async (doc) => {
+                const photoData = doc.data();
+                try {
+                    // Dodajemy nagłówki do żądania
+                    const response = await fetch(photoData.url, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'image/*',
+                            'Cache-Control': 'no-cache',
+                        },
+                        mode: 'cors', // Wymuszamy tryb CORS
+                        credentials: 'same-origin'
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    return {
+                        id: doc.id,
+                        ...photoData,
+                    };
+                } catch (error) {
+                    console.error(`Błąd podczas pobierania zdjęcia: ${error}`);
+                    return null;
+                }
+            });
+
+            const photos = (await Promise.all(photoPromises)).filter(photo => photo !== null);
+            setPhotos(photos);
+        } catch (error) {
+            console.error('Błąd podczas pobierania zdjęć:', error);
+            setError('Nie udało się pobrać zdjęć');
+        }
+    };
 
     const uploadPhoto = async (file) => {
         try {
@@ -154,9 +196,12 @@ const AlbumView = ({ albumId, onBack }) => {
             // Pobierz wszystkie zdjęcia i dodaj do ZIP
             for (let i = 0; i < photos.length; i++) {
                 const response = await fetch(photos[i].url, {
+                    method: 'GET',
                     mode: 'cors',
+                    credentials: 'same-origin',
                     headers: {
-                        'Access-Control-Allow-Origin': '*'
+                        'Accept': 'image/*',
+                        'Cache-Control': 'no-cache'
                     }
                 });
                 if (!response.ok) throw new Error('Network response was not ok');
@@ -172,7 +217,7 @@ const AlbumView = ({ albumId, onBack }) => {
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            URL.revokeObjectURL(link.href); // Zwolnij pamięć
+            URL.revokeObjectURL(link.href);
         } catch (error) {
             console.error('Szczegóły błędu:', error);
             setError('Wystąpił błąd podczas pobierania albumu. Spróbuj ponownie.');
@@ -185,12 +230,18 @@ const AlbumView = ({ albumId, onBack }) => {
     const handleDownloadPhoto = async (photo) => {
         try {
             const response = await fetch(photo.url, {
+                method: 'GET',
                 mode: 'cors',
+                credentials: 'omit',
                 headers: {
-                    'Access-Control-Allow-Origin': '*'
+                    'Accept': 'image/*'
                 }
             });
-            if (!response.ok) throw new Error('Network response was not ok');
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             const blob = await response.blob();
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
@@ -198,7 +249,7 @@ const AlbumView = ({ albumId, onBack }) => {
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            URL.revokeObjectURL(link.href); // Zwolnij pamięć
+            URL.revokeObjectURL(link.href);
         } catch (error) {
             console.error('Szczegóły błędu:', error);
             setError('Wystąpił błąd podczas pobierania zdjęcia. Spróbuj ponownie.');
@@ -216,9 +267,12 @@ const AlbumView = ({ albumId, onBack }) => {
                 const photo = album.photos.find(p => p.id === photoId);
                 if (photo) {
                     const response = await fetch(photo.url, {
+                        method: 'GET',
                         mode: 'cors',
+                        credentials: 'same-origin',
                         headers: {
-                            'Access-Control-Allow-Origin': '*'
+                            'Accept': 'image/*',
+                            'Cache-Control': 'no-cache'
                         }
                     });
                     if (!response.ok) throw new Error('Network response was not ok');
@@ -234,7 +288,7 @@ const AlbumView = ({ albumId, onBack }) => {
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            URL.revokeObjectURL(link.href); // Zwolnij pamięć
+            URL.revokeObjectURL(link.href);
         } catch (error) {
             console.error('Szczegóły błędu:', error);
             setError('Wystąpił błąd podczas pobierania wybranych zdjęć. Spróbuj ponownie.');

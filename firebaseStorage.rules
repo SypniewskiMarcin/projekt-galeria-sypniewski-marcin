@@ -2,9 +2,45 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    match /{allPaths=**} {
-      allow read: if true;  // Pozwól na publiczne odczytywanie
-      allow write: if request.auth != null;  // Wymagaj autoryzacji do zapisu
+    // Funkcje pomocnicze
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        request.auth.token.email == "kajuchu@gmail.com";
+    }
+
+    function isValidFile() {
+      return request.resource.size <= 50 * 1024 * 1024  // 50MB limit
+         && (request.resource.contentType == 'image/jpeg' 
+             || request.resource.contentType == 'image/jpg'
+             || request.resource.contentType == 'image/png');
+    }
+
+    function isImageOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Reguły dla zdjęć w albumach
+    match /albums/{albumId}/{fileName} {
+      allow read: if true;
+      allow create, update: if isAuthenticated() && isValidFile();
+      allow delete: if isAuthenticated() || isAdmin();
+    }
+
+    // Reguły dla folderu images
+    match /images/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow create, update: if isImageOwner(userId) && isValidFile();
+      allow delete: if isImageOwner(userId) || isAdmin();
+    }
+
+    // Reguły dla metadanych
+    match /metadata/{document=**} {
+      allow read: if true;
+      allow write: if isAuthenticated();
     }
   }
 }
