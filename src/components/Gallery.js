@@ -195,6 +195,17 @@ function Gallery({ user }) {
         setSelectedAlbumId(albumId);
     };
 
+    const fetchImage = async (path) => {
+        try {
+            const imageRef = ref(storage, path);
+            const url = await getDownloadURL(imageRef);
+            return url;
+        } catch (error) {
+            console.error('Błąd podczas ładowania obrazu:', error);
+            throw error;
+        }
+    };
+
     if (loading) {
         return <div className="loading">Ładowanie albumów...</div>;
     }

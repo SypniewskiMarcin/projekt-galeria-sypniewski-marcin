@@ -62,24 +62,13 @@ const AlbumView = ({ albumId, onBack }) => {
             const photoPromises = photosSnapshot.docs.map(async (doc) => {
                 const photoData = doc.data();
                 try {
-                    // Dodajemy nagłówki do żądania
-                    const response = await fetch(photoData.url, {
-                        method: 'GET',
-                        headers: {
-                            'Accept': 'image/*',
-                            'Cache-Control': 'no-cache',
-                        },
-                        mode: 'cors', // Wymuszamy tryb CORS
-                        credentials: 'same-origin'
-                    });
-                    
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    
+                    // Używamy Firebase Storage SDK zamiast fetch
+                    const imageRef = ref(storage, photoData.url);
+                    const url = await getDownloadURL(imageRef);
                     return {
                         id: doc.id,
                         ...photoData,
+                        url // aktualizujemy URL
                     };
                 } catch (error) {
                     console.error(`Błąd podczas pobierania zdjęcia: ${error}`);
@@ -195,18 +184,17 @@ const AlbumView = ({ albumId, onBack }) => {
 
             // Pobierz wszystkie zdjęcia i dodaj do ZIP
             for (let i = 0; i < photos.length; i++) {
-                const response = await fetch(photos[i].url, {
-                    method: 'GET',
-                    mode: 'cors',
-                    credentials: 'same-origin',
-                    headers: {
-                        'Accept': 'image/*',
-                        'Cache-Control': 'no-cache'
-                    }
-                });
-                if (!response.ok) throw new Error('Network response was not ok');
-                const blob = await response.blob();
-                zip.file(`zdjecie_${i + 1}.jpg`, blob);
+                try {
+                    const imageRef = ref(storage, photos[i].url);
+                    const url = await getDownloadURL(imageRef);
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    const blob = await response.blob();
+                    zip.file(`zdjecie_${i + 1}.jpg`, blob);
+                } catch (error) {
+                    console.error(`Błąd podczas pobierania zdjęcia ${i + 1}:`, error);
+                    continue; // Kontynuuj z następnym zdjęciem
+                }
             }
 
             // Generuj i pobierz plik ZIP
@@ -229,30 +217,20 @@ const AlbumView = ({ albumId, onBack }) => {
     // Funkcja do pobierania pojedynczego zdjęcia
     const handleDownloadPhoto = async (photo) => {
         try {
-            const response = await fetch(photo.url, {
-                method: 'GET',
-                mode: 'cors',
-                credentials: 'omit',
-                headers: {
-                    'Accept': 'image/*'
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
+            const imageRef = ref(storage, photo.url);
+            const url = await getDownloadURL(imageRef);
+            const response = await fetch(url);
             const blob = await response.blob();
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = `zdjecie_${photo.id}.jpg`;
+            link.download = photo.fileName || 'zdjecie.jpg';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(link.href);
         } catch (error) {
-            console.error('Szczegóły błędu:', error);
-            setError('Wystąpił błąd podczas pobierania zdjęcia. Spróbuj ponownie.');
+            console.error('Błąd podczas pobierania zdjęcia:', error);
+            setError('Wystąpił błąd podczas pobierania zdjęcia');
         }
     };
 
@@ -266,18 +244,19 @@ const AlbumView = ({ albumId, onBack }) => {
             for (const photoId of selectedPhotosArray) {
                 const photo = album.photos.find(p => p.id === photoId);
                 if (photo) {
-                    const response = await fetch(photo.url, {
-                        method: 'GET',
-                        mode: 'cors',
-                        credentials: 'same-origin',
-                        headers: {
-                            'Accept': 'image/*',
-                            'Cache-Control': 'no-cache'
-                        }
-                    });
-                    if (!response.ok) throw new Error('Network response was not ok');
-                    const blob = await response.blob();
-                    zip.file(`zdjecie_${photoId}.jpg`, blob);
+                    try {
+                        // Używamy Firebase Storage SDK
+                        const imageRef = ref(storage, photo.url);
+                        const url = await getDownloadURL(imageRef);
+                        const response = await fetch(url);
+                        
+                        if (!response.ok) throw new Error('Network response was not ok');
+                        const blob = await response.blob();
+                        zip.file(`zdjecie_${photoId}.jpg`, blob);
+                    } catch (error) {
+                        console.error(`Błąd podczas pobierania zdjęcia ${photoId}:`, error);
+                        continue; // Kontynuuj z następnym zdjęciem
+                    }
                 }
             }
 
@@ -290,8 +269,8 @@ const AlbumView = ({ albumId, onBack }) => {
             document.body.removeChild(link);
             URL.revokeObjectURL(link.href);
         } catch (error) {
-            console.error('Szczegóły błędu:', error);
-            setError('Wystąpił błąd podczas pobierania wybranych zdjęć. Spróbuj ponownie.');
+            console.error('Błąd podczas pobierania wybranych zdjęć:', error);
+            setError('Wystąpił błąd podczas pobierania wybranych zdjęć');
         } finally {
             setLoading(false);
             setIsSelectionMode(false);
@@ -321,6 +300,17 @@ const AlbumView = ({ albumId, onBack }) => {
     const handlePurchaseAlbum = () => {
         setIsFullAlbumPurchase(true);
         setShowPaymentProcess(true);
+    };
+
+    const loadImage = async (path) => {
+        try {
+            const imageRef = ref(storage, path);
+            const url = await getDownloadURL(imageRef);
+            return url;
+        } catch (error) {
+            console.error('Błąd podczas ładowania zdjęcia:', error);
+            return null;
+        }
     };
 
     if (loading) {

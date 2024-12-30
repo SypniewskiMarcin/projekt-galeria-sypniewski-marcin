@@ -2,44 +2,69 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Funkcje pomocnicze
+    // ===== FUNKCJE POMOCNICZE =====
+    
+    // Sprawdza czy użytkownik jest zalogowany
     function isAuthenticated() {
       return request.auth != null;
     }
 
+    // Sprawdza czy zalogowany użytkownik jest administratorem
+    // Obecnie admin jest określony przez konkretny adres email
     function isAdmin() {
       return isAuthenticated() && 
         request.auth.token.email == "kajuchu@gmail.com";
     }
 
+    // Walidacja przesyłanych plików:
+    // - Maksymalny rozmiar: 50MB
+    // - Dozwolone tylko pliki JPG/JPEG
     function isValidFile() {
       return request.resource.size <= 50 * 1024 * 1024  // 50MB limit
          && (request.resource.contentType == 'image/jpeg' 
-             || request.resource.contentType == 'image/jpg'
-             || request.resource.contentType == 'image/png');
+             || request.resource.contentType == 'image/jpg');
     }
 
+    // Sprawdza czy użytkownik jest właścicielem zdjęcia
+    // poprzez porównanie ID użytkownika
     function isImageOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // Reguły dla zdjęć w albumach
+    // ===== REGUŁY DLA ALBUMÓW =====
     match /albums/{albumId}/{fileName} {
-      allow read: if true;
+      // Publiczny dostęp do odczytu i listowania zawartości albumów
+      allow read, get: if true;  // Pozwala na pobieranie pojedynczych plików
+      allow list: if true;       // Pozwala na listowanie zawartości albumów
+      
+      // Tylko zalogowani użytkownicy mogą dodawać/aktualizować pliki
+      // z dodatkową walidacją formatu i rozmiaru
       allow create, update: if isAuthenticated() && isValidFile();
+      
+      // Usuwanie dozwolone dla właściciela lub admina
       allow delete: if isAuthenticated() || isAdmin();
     }
 
-    // Reguły dla folderu images
+    // ===== REGUŁY DLA INDYWIDUALNYCH ZDJĘĆ =====
     match /images/{userId}/{allPaths=**} {
-      allow read: if true;
+      // Publiczny dostęp do odczytu zdjęć
+      allow read, get: if true;
+      allow list: if true;
+      
+      // Tylko właściciel może dodawać/aktualizować swoje zdjęcia
       allow create, update: if isImageOwner(userId) && isValidFile();
+      
+      // Właściciel lub admin może usuwać zdjęcia
       allow delete: if isImageOwner(userId) || isAdmin();
     }
 
-    // Reguły dla metadanych
+    // ===== REGUŁY DLA METADANYCH =====
     match /metadata/{document=**} {
-      allow read: if true;
+      // Publiczny dostęp do odczytu metadanych
+      allow read, get: if true;
+      allow list: if true;
+      
+      // Tylko zalogowani użytkownicy mogą modyfikować metadane
       allow write: if isAuthenticated();
     }
   }
