@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { auth } from '@/firebaseConfig';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth, db } from '@/firebaseConfig';
+import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { User } from '@/types';
 
 /**
  * Hook zarządzający stanem autoryzacji użytkownika
@@ -14,8 +16,17 @@ export const useAuth = () => {
 
   useEffect(() => {
     // Nasłuchiwanie na zmiany stanu autoryzacji
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const userRef = doc(db, 'users', firebaseUser.uid);
+        const userDoc = await getDoc(userRef);
+        
+        if (userDoc.exists()) {
+          setUser(userDoc.data() as User);
+        }
+      } else {
+        setUser(null);
+      }
       setLoading(false);
     });
 

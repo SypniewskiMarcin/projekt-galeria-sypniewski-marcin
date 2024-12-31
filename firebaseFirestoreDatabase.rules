@@ -23,6 +23,10 @@ service cloud.firestore {
              album.createdAt is string;
     }
 
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
     // Reguły dla users
     match /users/{userId} {
       allow read: if isAuthenticated();
@@ -31,13 +35,18 @@ service cloud.firestore {
 
     // Reguły dla albums
     match /albums/{albumId} {
-      allow read: if resource.data.isPublic == true || 
-                  (request.auth != null && 
-                   (resource.data.author.uid == request.auth.uid || isAdmin()));
-      allow create: if isAuthenticated() && 
-                    request.resource.data.author.uid == request.auth.uid;
+      allow read: if true;
+      allow create: if isAuthenticated();
       allow update, delete: if isAuthenticated() && 
-        (resource.data.author.uid == request.auth.uid || isAdmin());
+        (resource.data.ownerId == request.auth.uid);
+        
+      // Specjalne reguły dla prywatnych albumów
+      match /{document=**} {
+        allow read: if !resource.data.isPrivate || 
+          (isAuthenticated() && isOwner(resource.data.ownerId));
+        allow write: if isAuthenticated() && 
+          isOwner(resource.data.ownerId);
+      }
     }
 
     // Reguły dla settings
@@ -49,13 +58,75 @@ service cloud.firestore {
 
     // Reguły dla transactions
     match /transactions/{transactionId} {
-      allow read: if request.auth != null && 
-        (resource.data.buyerId == request.auth.uid || 
-         resource.data.sellerId == request.auth.uid || 
-         isAdmin());
-      allow create: if request.auth != null && 
-        request.resource.data.buyerId == request.auth.uid;
-      allow update: if false; // Transakcje nie mogą być modyfikowane
+      function isValidTransaction() {
+        return request.resource.data.keys().hasAll(['buyerId', 'sellerId', 'photoId', 'amount', 'status', 'createdAt']) &&
+               request.resource.data.buyerId == request.auth.uid;
+      }
+
+      // Uproszczone reguły dla transakcji
+      allow read: if isAuthenticated();
+      
+      // Pozwól na tworzenie transakcji zalogowanym użytkownikom
+      allow create: if isAuthenticated();
+      
+      // Pozwól na aktualizację statusu
+      allow update: if isAuthenticated();
+    }
+
+    // Reguły dla payment_callbacks
+    match /payment_callbacks/{callbackId} {
+      allow create: if true;
+      allow read: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // Reguły dla purchased_photos
+    match /purchased_photos/{purchaseId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    // Reguły dla payment_settings
+    match /payment_settings/{document} {
+      allow read: if true; // Publiczny dostęp do informacji o cenach
+      allow write: if isAdmin(); // Tylko admin może modyfikować ustawienia płatności
+    }
+
+    // Reguły dla photos
+    match /photos/{photoId} {
+      function hasValidPurchase() {
+        return 
+          // Sprawdź purchased_photos
+          exists(/databases/$(database)/documents/purchased_photos) &&
+          get(/databases/$(database)/documents/purchased_photos)
+            .data.photoId == photoId &&
+          get(/databases/$(database)/documents/purchased_photos)
+            .data.buyerId == request.auth.uid
+          ||
+          // Sprawdź transactions
+          exists(/databases/$(database)/documents/transactions) &&
+          get(/databases/$(database)/documents/transactions)
+            .data.photoId == photoId &&
+          get(/databases/$(database)/documents/transactions)
+            .data.buyerId == request.auth.uid &&
+          get(/databases/$(database)/documents/transactions)
+            .data.status == 'completed';
+      }
+
+      allow read: if true;
+      
+      allow write: if 
+        isAuthenticated() &&
+        (
+          // Właściciel może zawsze
+          resource.data.ownerId == request.auth.uid ||
+          // Publiczne zdjęcia dostępne dla wszystkich
+          resource.data.type == 'public' ||
+          // Zakupione zdjęcia
+          hasValidPurchase()
+        );
     }
   }
 }

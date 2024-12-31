@@ -1,9 +1,13 @@
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { auth } from '@/firebaseConfig';
-import { useAuth } from '@/hooks/useAuth';
+import { User } from '@/types';
 
-const Navigation = () => {
-  const { user } = useAuth();
+interface NavigationProps {
+  user: User | null;
+}
+
+const Navigation: React.FC<NavigationProps> = ({ user }) => {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -15,41 +19,35 @@ const Navigation = () => {
     }
   };
 
-  if (!user) return null;
-
   return (
-    <nav className="bg-white shadow-lg">
-      <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center h-16">
-          <div className="flex space-x-4">
-            <Link 
-              to="/" 
-              className="text-gray-700 hover:text-blue-500 px-3 py-2 rounded-md text-sm font-medium"
-            >
+    <nav className="navigation">
+      <div className="nav-brand">
+        <Link to="/">Galeria Zdjęć</Link>
+      </div>
+      
+      <div className="nav-links">
+        {user ? (
+          <>
+            <Link to="/" className="nav-link">
               Galeria
             </Link>
-            <Link 
-              to="/albums" 
-              className="text-gray-700 hover:text-blue-500 px-3 py-2 rounded-md text-sm font-medium"
-            >
-              Albumy
-            </Link>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Link 
-              to="/profile" 
-              className="text-gray-700 hover:text-blue-500 px-3 py-2 rounded-md text-sm font-medium"
-            >
+            <Link to="/profile" className="nav-link">
               Profil
             </Link>
-            <button
-              onClick={handleLogout}
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium"
-            >
+            {user.role === 'admin' && (
+              <Link to="/admin" className="nav-link">
+                Panel Admina
+              </Link>
+            )}
+            <button onClick={handleLogout} className="logout-button">
               Wyloguj
             </button>
-          </div>
-        </div>
+          </>
+        ) : (
+          <Link to="/login" className="nav-link">
+            Zaloguj
+          </Link>
+        )}
       </div>
     </nav>
   );

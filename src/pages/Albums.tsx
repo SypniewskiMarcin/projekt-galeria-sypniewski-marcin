@@ -1,75 +1,85 @@
-import { useState, useEffect } from 'react';
-import { collection, query, getDocs } from 'firebase/firestore';
-import { db } from '@/firebaseConfig';
+import React, { useState, useEffect } from 'react';
+import { collection, query, getDocs, where } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
+import { Album } from '../types';
+import { useAuth } from '../hooks/useAuth';
+import AlbumList from '../components/AlbumList';
+import CreateAlbum from '../components/CreateAlbum';
 
-interface Album {
-  id: string;
-  name: string;
-  coverUrl: string;
-  photoCount: number;
-  createdAt: Date;
-}
-
-const Albums = () => {
+const Albums: React.FC = () => {
   const [albums, setAlbums] = useState<Album[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const { user } = useAuth();
+
+  const fetchAlbums = async () => {
+    try {
+      const q = query(
+        collection(db, 'albums'),
+        where('isPublic', '==', true)
+      );
+      
+      if (user) {
+        q = query(
+          collection(db, 'albums'),
+          where('ownerId', '==', user.id)
+        );
+      }
+
+      const querySnapshot = await getDocs(q);
+      const fetchedAlbums = querySnapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id
+      })) as Album[];
+
+      setAlbums(fetchedAlbums);
+    } catch (err) {
+      console.error('Error fetching albums:', err);
+      setError('Wystąpił błąd podczas pobierania albumów');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchAlbums = async () => {
-      try {
-        const q = query(collection(db, 'albums'));
-        const querySnapshot = await getDocs(q);
-        const fetchedAlbums = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate()
-        })) as Album[];
-        
-        setAlbums(fetchedAlbums);
-      } catch (error) {
-        console.error('Błąd podczas pobierania albumów:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchAlbums();
-  }, []);
+  }, [user]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
+    return <div>Ładowanie...</div>;
+  }
+
+  if (error) {
+    return <div className="text-red-600">{error}</div>;
   }
 
   return (
     <div className="container mx-auto px-4">
-      <h1 className="text-3xl font-bold mb-8">Albumy</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {albums.map((album) => (
-          <div
-            key={album.id}
-            className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow"
-          >
-            <img
-              src={album.coverUrl}
-              alt={album.name}
-              className="w-full h-48 object-cover"
-            />
-            <div className="p-4">
-              <h3 className="text-xl font-semibold mb-2">{album.name}</h3>
-              <p className="text-gray-600">
-                {album.photoCount} zdjęć
-              </p>
-              <p className="text-sm text-gray-500 mt-2">
-                Utworzono: {album.createdAt?.toLocaleDateString()}
-              </p>
-            </div>
-          </div>
-        ))}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Albumy</h1>
+        <button
+          onClick={() => setIsCreateModalOpen(true)}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Utwórz album
+        </button>
       </div>
+
+      <AlbumList 
+        albums={albums}
+        onAlbumClick={(albumId) => {/* handle album click */}}
+      />
+
+      {isCreateModalOpen && (
+        <CreateAlbum
+          onClose={() => setIsCreateModalOpen(false)}
+          onAlbumCreated={() => {
+            setIsCreateModalOpen(false);
+            fetchAlbums();
+          }}
+        />
+      )}
     </div>
   );
 };

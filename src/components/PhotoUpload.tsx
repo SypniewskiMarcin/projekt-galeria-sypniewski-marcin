@@ -1,108 +1,125 @@
-import { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
+import { storage, db } from '../firebaseConfig';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { storage, db } from '@/firebaseConfig';
-import { useAuth } from '@/hooks/useAuth';
-import Alert from './Alert';
-import LoadingSpinner from './LoadingSpinner';
+import { collection, addDoc } from 'firebase/firestore';
+import { useAuth } from '../hooks/useAuth';
+import { Photo } from '../types';
 
 interface PhotoUploadProps {
-  onSuccess?: () => void;
-  albumId?: string;
+  onClose: () => void;
+  onUploadComplete: () => void;
 }
 
-/**
- * Komponent PhotoUpload obsługujący przesyłanie zdjęć
- * @param {PhotoUploadProps} props - Właściwości komponentu
- * @returns {JSX.Element} - Wyrenderowany komponent PhotoUpload
- */
-const PhotoUpload = ({ onSuccess, albumId }: PhotoUploadProps) => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string>('');
-  const [success, setSuccess] = useState(false);
+const PhotoUpload: React.FC<PhotoUploadProps> = ({ onClose, onUploadComplete }) => {
+  const [files, setFiles] = useState<FileList | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
 
-  /**
-   * Obsługa przesyłania pliku
-   * @param {File} file - Plik do przesłania
-   */
-  const handleUpload = async (file: File) => {
-    setLoading(true);
-    setError('');
-    setSuccess(false);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setFiles(e.target.files);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!files || !user) return;
+
+    setUploading(true);
+    const totalFiles = files.length;
+    let completed = 0;
 
     try {
-      // Sprawdzenie typu pliku
-      if (!file.type.startsWith('image/')) {
-        throw new Error('Można przesyłać tylko pliki graficzne');
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const storageRef = ref(storage, `photos/${user.id}/${Date.now()}_${file.name}`);
+        
+        await uploadBytes(storageRef, file);
+        const url = await getDownloadURL(storageRef);
+
+        const photoData: Omit<Photo, 'id'> = {
+          url,
+          title: file.name,
+          ownerId: user.id,
+          isPublic: false,
+          metadata: {
+            size: file.size,
+            format: file.type,
+            width: 0, // To be updated after load
+            height: 0
+          },
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+
+        await addDoc(collection(db, 'photos'), photoData);
+        
+        completed++;
+        setProgress((completed / totalFiles) * 100);
       }
 
-      // Utworzenie referencji do Storage
-      const storageRef = ref(storage, `photos/${Date.now()}_${file.name}`);
-      
-      // Przesłanie pliku
-      await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(storageRef);
-
-      // Dodanie informacji o zdjęciu do Firestore
-      await addDoc(collection(db, 'photos'), {
-        url: downloadURL,
-        title: file.name,
-        createdAt: serverTimestamp(),
-        userId: user?.uid,
-        albumId: albumId || null
-      });
-
-      setSuccess(true);
-      if (onSuccess) onSuccess();
-      
-      // Wyczyszczenie inputa
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Wystąpił błąd podczas przesyłania');
+      onUploadComplete();
+      onClose();
+    } catch (error) {
+      console.error('Błąd podczas przesyłania:', error);
     } finally {
-      setLoading(false);
+      setUploading(false);
     }
   };
 
   return (
-    <div className="space-y-4">
-      {/* Input do wyboru pliku */}
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0])}
-        accept="image/*"
-        className="block w-full text-sm text-gray-500
-          file:mr-4 file:py-2 file:px-4
-          file:rounded-full file:border-0
-          file:text-sm file:font-semibold
-          file:bg-blue-50 file:text-blue-700
-          hover:file:bg-blue-100"
-        disabled={loading}
-      />
-
-      {/* Wskaźnik ładowania */}
-      {loading && <LoadingSpinner size="sm" />}
-
-      {/* Komunikaty o statusie */}
-      {error && (
-        <Alert 
-          type="error" 
-          message={error} 
-          onClose={() => setError('')}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75">
+      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <h2 className="text-2xl font-bold mb-4">Dodaj zdjęcia</h2>
+        
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={handleFileChange}
+          className="hidden"
         />
-      )}
-      {success && (
-        <Alert 
-          type="success" 
-          message="Zdjęcie zostało przesłane pomyślnie" 
-          onClose={() => setSuccess(false)}
-        />
-      )}
+
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="w-full p-4 border-2 border-dashed border-gray-300 rounded-lg mb-4 hover:border-blue-500"
+        >
+          Wybierz zdjęcia
+        </button>
+
+        {files && (
+          <p className="mb-4">
+            Wybrano {files.length} {files.length === 1 ? 'zdjęcie' : 'zdjęć'}
+          </p>
+        )}
+
+        {uploading && (
+          <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+            <div
+              className="bg-blue-600 h-2.5 rounded-full"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        )}
+
+        <div className="flex justify-end space-x-4">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-gray-600 hover:text-gray-800"
+          >
+            Anuluj
+          </button>
+          <button
+            onClick={handleUpload}
+            disabled={!files || uploading}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
+          >
+            {uploading ? 'Przesyłanie...' : 'Prześlij'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

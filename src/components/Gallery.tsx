@@ -11,12 +11,16 @@ import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
 import AlbumView from './AlbumView'; // Importuj komponent AlbumView
 import OptimizedImage from './OptimizedImage';
 import AlbumList from './AlbumList';
+import { PhotoEditor } from './PhotoEditor';
+import { usePhotoPermissions } from '../hooks/usePhotoPermissions';
+import { db, storage } from '@/firebaseConfig';
+import { User, Album, Photo } from '@/types';
 
 function Gallery({ user }) {
-    const [selectedImageIndex, setSelectedImageIndex] = useState(null);
+    const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
     const [images, setImages] = useState([]);
     const [isCreateAlbumVisible, setIsCreateAlbumVisible] = useState(false); // Stan do zarządzania widocznością formularza
-    const [albums, setAlbums] = useState([]);
+    const [albums, setAlbums] = useState<Album[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState('createdAt'); // domyślne sortowanie po dacie utworzenia
@@ -26,6 +30,9 @@ function Gallery({ user }) {
     const [albumsPerPage] = useState(10);
     const [selectedAlbumId, setSelectedAlbumId] = useState(null);
     const [error, setError] = useState(null);
+    const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+    const [isEditing, setIsEditing] = useState(false);
+    const { canEditPhoto } = usePhotoPermissions();
 
     const categories = [
         'all',
@@ -206,6 +213,14 @@ function Gallery({ user }) {
         }
     };
 
+    const handleEditClick = async (photo) => {
+        const canEdit = await canEditPhoto(photo, albums.find(album => album.id === selectedAlbumId));
+        if (canEdit) {
+            setSelectedPhoto(photo);
+            setIsEditing(true);
+        }
+    };
+
     if (loading) {
         return <div className="loading">Ładowanie albumów...</div>;
     }
@@ -325,6 +340,18 @@ function Gallery({ user }) {
                             onClose={() => setSelectedImageIndex(null)}
                             onPrev={handlePrev}
                             onNext={handleNext}
+                        />
+                    )}
+
+                    {isEditing && selectedPhoto && (
+                        <PhotoEditor
+                            imageUrl={selectedPhoto.url}
+                            photo={selectedPhoto}
+                            album={albums.find(album => album.id === selectedAlbumId)}
+                            onClose={() => {
+                                setIsEditing(false);
+                                setSelectedPhoto(null);
+                            }}
                         />
                     )}
                 </>

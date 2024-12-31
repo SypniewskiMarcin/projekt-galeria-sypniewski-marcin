@@ -2,84 +2,63 @@ import { useState, useEffect } from 'react';
 import { collection, query, getDocs, where, orderBy } from 'firebase/firestore';
 import { db, storage } from '@/firebaseConfig';
 import { ref, getDownloadURL } from 'firebase/storage';
+import { Photo } from '@/types';
 
-interface Photo {
-  id: string;
-  url: string;
-  title: string;
-  createdAt: Date;
-  userId: string;
+interface UsePhotosProps {
   albumId?: string;
+  userId?: string;
 }
 
-/**
- * Hook do pobierania i zarządzania zdjęciami
- * @param {string} albumId - Opcjonalne ID albumu do filtrowania
- * @returns {Object} - Obiekt zawierający zdjęcia i stan ładowania
- */
-export const usePhotos = (albumId?: string) => {
+export const usePhotos = ({ albumId, userId }: UsePhotosProps) => {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchPhotoWithStorage = async (path: string) => {
-    try {
-      const imageRef = ref(storage, path);
-      const url = await getDownloadURL(imageRef);
-      return url;
-    } catch (error) {
-      console.error('Błąd podczas pobierania zdjęcia:', error);
-      throw error;
-    }
-  };
-
   useEffect(() => {
     const fetchPhotos = async () => {
       try {
-        const photosQuery = query(
-          collection(db, 'photos'),
-          ...(albumId ? [where('albumId', '==', albumId)] : []),
-          orderBy('createdAt', 'desc')
-        );
+        const photosRef = collection(db, 'photos');
+        let q = query(photosRef, orderBy('createdAt', 'desc'));
 
-        const querySnapshot = await getDocs(photosQuery);
+        if (albumId) {
+          q = query(q, where('albumId', '==', albumId));
+        }
+
+        if (userId) {
+          q = query(q, where('ownerId', '==', userId));
+        }
+
+        const snapshot = await getDocs(q);
         const fetchedPhotos = await Promise.all(
-          querySnapshot.docs.map(async (doc) => {
+          snapshot.docs.map(async (doc) => {
             const data = doc.data();
-            if (data.url) {
-              try {
-                const url = await fetchPhotoWithStorage(data.url);
-                return {
-                  id: doc.id,
-                  ...data,
-                  url,
-                  createdAt: data.createdAt?.toDate()
-                };
-              } catch (error) {
-                console.error(`Błąd podczas pobierania zdjęcia: ${data.url}`, error);
-                return null;
-              }
+            try {
+              const url = await getDownloadURL(ref(storage, data.path));
+              return {
+                id: doc.id,
+                url,
+                createdAt: data.createdAt,
+                ...data
+              };
+            } catch (err) {
+              console.error(`Error fetching URL for photo ${doc.id}:`, err);
+              return null;
             }
-            return {
-              id: doc.id,
-              ...data,
-              createdAt: data.createdAt?.toDate()
-            };
           })
-        ).filter(Boolean) as Photo[];
+        ).then(results => results.filter(Boolean) as Photo[]);
 
         setPhotos(fetchedPhotos);
         setError(null);
       } catch (err) {
-        setError('Błąd podczas pobierania zdjęć');
-        console.error('Błąd podczas pobierania zdjęć:', err);
+        console.error('Error fetching photos:', err);
+        setError('Wystąpił błąd podczas pobierania zdjęć');
       } finally {
         setLoading(false);
       }
     };
 
     fetchPhotos();
-  }, [albumId]);
+  }, [albumId, userId]);
 
   return { photos, loading, error };
 }; 

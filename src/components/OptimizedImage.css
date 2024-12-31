@@ -1,164 +1,74 @@
 .optimized-image-container {
-    overflow: hidden;
     position: relative;
-    background-color: #f5f5f5;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: transform 0.2s ease;
-    height: 100%;
-    width: 100%;
-    padding: 0;
-}
-
-.optimized-image-container:not(.natural-ratio) {
+    overflow: hidden;
+    background-color: #f3f4f6;
     aspect-ratio: 1;
+    border-radius: 0.5rem;
 }
 
-.natural-ratio {
-    height: 100%;
-    width: 100%;
+.optimized-image-container.clickable {
+    cursor: pointer;
+    transition: transform 0.2s ease-in-out;
 }
 
-.natural-ratio .optimized-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.optimized-image-container:hover {
+.optimized-image-container.clickable:hover {
     transform: scale(1.02);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.optimized-image {
-    position: absolute;
-    top: 0;
-    left: 0;
+.optimized-image-container.clickable:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+.optimized-image-container img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    will-change: opacity, transform;
-}
-
-/* Efekt pulsowania dla tła podczas ładowania */
-@keyframes pulse {
-    0% { background-color: #f5f5f5; }
-    50% { background-color: #e8e8e8; }
-    100% { background-color: #f5f5f5; }
-}
-
-.optimized-image-container::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: #f5f5f5;
-    animation: pulse 1.5s ease-in-out infinite;
-}
-
-/* Thumbnail styles */
-.thumbnail {
     opacity: 0;
-    transform: scale(1.05);
-    transition: opacity 0.5s ease, transform 0.5s ease;
+    transition: opacity 0.3s ease-in-out;
 }
 
-.thumbnail.loaded {
+.optimized-image-container.loaded img {
     opacity: 1;
-    transform: scale(1);
 }
 
-.thumbnail.fade-out {
-    opacity: 0;
-    transform: scale(0.95);
-    transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-/* Full image styles */
-.full-image {
-    opacity: 0;
-    transform: scale(1.05);
-}
-
-.full-image.fade-in {
-    animation: fadeInScale 0.5s ease forwards;
-}
-
-@keyframes fadeInScale {
-    0% {
-        opacity: 0;
-        transform: scale(1.05);
-    }
-    100% {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-/* Blur effect for smooth transition */
-.blur-load {
-    filter: blur(10px);
-    transition: filter 0.3s ease;
-}
-
-.blur-load.loaded {
-    filter: blur(0);
-}
-
-/* Dark mode */
-@media (prefers-color-scheme: dark) {
-    .optimized-image-container {
-        background-color: #2a2a2a;
-    }
-
-    .optimized-image-container::before {
-        background-color: #2a2a2a;
-    }
-
-    @keyframes pulse {
-        0% { background-color: #2a2a2a; }
-        50% { background-color: #333333; }
-        100% { background-color: #2a2a2a; }
-    }
-
-    .optimized-image-container:hover {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    }
-}
-
-/* Reduced motion */
-@media (prefers-reduced-motion: reduce) {
-    .optimized-image-container,
-    .optimized-image,
-    .thumbnail,
-    .full-image {
-        transition: none;
-        animation: none;
-    }
-
-    .optimized-image-container::before {
-        animation: none;
-    }
-
-    .blur-load {
-        filter: none;
-    }
-}
-
-.optimized-image-container.natural-ratio {
-    position: relative;
-    overflow: hidden;
-    margin: 0;
-    background-color: #f5f5f5;
-}
-
-.natural-ratio .optimized-image {
+.loading-placeholder {
     position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.loading-spinner {
+    width: 2rem;
+    height: 2rem;
+    border: 2px solid #e5e7eb;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.error-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    text-align: center;
+    color: #ef4444;
+    background-color: #fee2e2;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
 } 

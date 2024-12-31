@@ -1,81 +1,84 @@
-import { useState, useEffect } from 'react';
-import { collection, query, getDocs } from 'firebase/firestore';
+import React, { useState, useEffect } from 'react';
+import { collection, query, getDocs, where, orderBy } from 'firebase/firestore';
 import { db } from '@/firebaseConfig';
+import { Photo } from '@/types';
+import { useAuth } from '@/hooks/useAuth';
+import PhotoGallery from '@/components/PhotoGallery';
+import PhotoUpload from '@/components/PhotoUpload';
 
-// Interfejs opisujący strukturę zdjęcia
-interface Photo {
-  id: string;
-  url: string;
-  title: string;
-  createdAt: Date;
-}
-
-const Gallery = () => {
-  // Stan komponentu
+const Gallery: React.FC = () => {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const { user } = useAuth();
+
+  const fetchPhotos = async () => {
+    try {
+      let q = query(
+        collection(db, 'photos'),
+        where('isPublic', '==', true),
+        orderBy('createdAt', 'desc')
+      );
+
+      if (user) {
+        q = query(
+          collection(db, 'photos'),
+          where('ownerId', '==', user.id),
+          orderBy('createdAt', 'desc')
+        );
+      }
+
+      const querySnapshot = await getDocs(q);
+      const fetchedPhotos = querySnapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id
+      })) as Photo[];
+
+      setPhotos(fetchedPhotos);
+    } catch (err) {
+      console.error('Error fetching photos:', err);
+      setError('Wystąpił błąd podczas pobierania zdjęć');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Funkcja pobierająca zdjęcia z Firestore
-    const fetchPhotos = async () => {
-      try {
-        // Tworzenie zapytania do kolekcji zdjęć
-        const q = query(collection(db, 'photos'));
-        const querySnapshot = await getDocs(q);
-        
-        // Mapowanie dokumentów na obiekty zdjęć
-        const fetchedPhotos = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate()
-        })) as Photo[];
-        
-        setPhotos(fetchedPhotos);
-      } catch (error) {
-        console.error('Błąd podczas pobierania zdjęć:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchPhotos();
-  }, []);
+  }, [user]);
 
-  // Wyświetlanie loadera podczas ładowania danych
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
+    return <div>Ładowanie...</div>;
   }
 
-  // Renderowanie galerii zdjęć
+  if (error) {
+    return <div className="text-red-600">{error}</div>;
+  }
+
   return (
     <div className="container mx-auto px-4">
-      <h1 className="text-3xl font-bold mb-8">Galeria Zdjęć</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {photos.map((photo) => (
-          <div
-            key={photo.id}
-            className="relative group overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow"
-          >
-            {/* Zdjęcie z efektem hover */}
-            <img
-              src={photo.url}
-              alt={photo.title}
-              className="w-full h-64 object-cover transition-transform group-hover:scale-105"
-            />
-            {/* Nakładka z informacjami */}
-            <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white p-4 transform translate-y-full group-hover:translate-y-0 transition-transform">
-              <h3 className="text-lg font-semibold">{photo.title}</h3>
-              <p className="text-sm">
-                {photo.createdAt?.toLocaleDateString()}
-              </p>
-            </div>
-          </div>
-        ))}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Galeria</h1>
+        <button
+          onClick={() => setIsUploading(true)}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Dodaj zdjęcia
+        </button>
       </div>
+
+      <PhotoGallery photos={photos} />
+
+      {isUploading && (
+        <PhotoUpload
+          onClose={() => setIsUploading(false)}
+          onUploadComplete={() => {
+            setIsUploading(false);
+            fetchPhotos();
+          }}
+        />
+      )}
     </div>
   );
 };

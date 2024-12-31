@@ -2,7 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // Funkcje pomocnicze
-    function isAuthenticated() {
+    function isSignedIn() {
       return request.auth != null;
     }
     
@@ -13,35 +13,32 @@ service cloud.firestore {
     function hasRole(role) {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
     }
-
-    // Reguły dla kolekcji użytkowników
+    
+    function isAdmin() {
+      return hasRole('admin');
+    }
+    
+    // Reguły dla kolekcji users
     match /users/{userId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isOwner(userId);
-      allow update: if isAuthenticated() && (isOwner(userId) || hasRole('admin'));
-      allow delete: if hasRole('admin');
+      allow read: if isSignedIn();
+      allow write: if isOwner(userId) || isAdmin();
     }
-
-    // Reguły dla kolekcji zdjęć
-    match /photos/{photoId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && hasRole('photographer');
-      allow update: if isAuthenticated() && (
-        hasRole('photographer') || 
-        hasRole('admin')
-      );
-      allow delete: if isAuthenticated() && hasRole('admin');
-    }
-
-    // Reguły dla kolekcji albumów
+    
+    // Reguły dla kolekcji albums
     match /albums/{albumId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && hasRole('photographer');
-      allow update: if isAuthenticated() && (
-        hasRole('photographer') || 
-        hasRole('admin')
-      );
-      allow delete: if isAuthenticated() && hasRole('admin');
+      allow read: if resource.data.isPublic || isOwner(resource.data.ownerId) || isAdmin();
+      allow create: if isSignedIn();
+      allow update, delete: if isOwner(resource.data.ownerId) || isAdmin();
+    }
+    
+    // Reguły dla kolekcji photos
+    match /photos/{photoId} {
+      allow read: if resource.data.isPublic 
+        || isOwner(resource.data.ownerId) 
+        || isAdmin()
+        || (resource.data.albumId != null && get(/databases/$(database)/documents/albums/$(resource.data.albumId)).data.isPublic);
+      allow create: if isSignedIn();
+      allow update, delete: if isOwner(resource.data.ownerId) || isAdmin();
     }
   }
 } 

@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { signInWithPopup } from 'firebase/auth';
-import { auth, provider } from '@/firebaseConfig';
+import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { auth, provider, db } from '../firebaseConfig';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { User } from '../types';
 
 const Login = () => {
   const [error, setError] = useState<string>('');

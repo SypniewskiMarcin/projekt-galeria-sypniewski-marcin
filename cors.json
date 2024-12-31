@@ -1,29 +1,12 @@
 [
   {
-    "origin": ["*"],
-    "method": ["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"],
+    "origin": [
+      "http://localhost:3000",
+      "https://projekt-galeria-sypniewski-m.web.app",
+      "https://projekt-galeria-sypniewski-m.firebaseapp.com"
+    ],
+    "method": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     "maxAgeSeconds": 3600,
-    "responseHeader": [
-      "Content-Type",
-      "Content-Length",
-      "Content-Encoding",
-      "Content-Disposition",
-      "Cache-Control",
-      "Access-Control-Allow-Origin",
-      "Access-Control-Allow-Methods",
-      "Access-Control-Allow-Headers",
-      "Access-Control-Expose-Headers",
-      "Authorization",
-      "Origin",
-      "X-Requested-With",
-      "Accept",
-      "User-Agent",
-      "Last-Modified",
-      "If-Match",
-      "If-None-Match",
-      "If-Modified-Since",
-      "If-Unmodified-Since",
-      "x-goog-*"
-    ]
+    "responseHeader": ["Content-Type", "Authorization", "Content-Length", "User-Agent", "x-goog-resumable"]
   }
 ] 

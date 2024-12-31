@@ -2,43 +2,44 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     // Funkcje pomocnicze
-    function isAuthenticated() {
+    function isSignedIn() {
       return request.auth != null;
     }
     
-    function isImage() {
-      return request.resource.contentType.matches('image/.*');
+    function isOwner(userId) {
+      return request.auth.uid == userId;
     }
     
-    function isValidSize() {
-      return request.resource.size < 5 * 1024 * 1024; // Max 5MB
-    }
-
     function hasRole(role) {
       return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == role;
     }
-
-    // Reguły dla zdjęć w galerii
-    match /photos/{photoId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() 
-        && hasRole('photographer')
-        && isImage()
-        && isValidSize();
-      allow update: if isAuthenticated() 
-        && (hasRole('photographer') || hasRole('admin'))
-        && isImage()
-        && isValidSize();
-      allow delete: if isAuthenticated() && hasRole('admin');
+    
+    function isAdmin() {
+      return hasRole('admin');
     }
-
-    // Reguły dla miniatur albumów
-    match /album-covers/{albumId} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated() 
-        && (hasRole('photographer') || hasRole('admin'))
-        && isImage()
-        && isValidSize();
+    
+    // Reguły dla zdjęć w albumach
+    match /albums/{albumId}/{photoName} {
+      allow read: if 
+        firestore.get(/databases/(default)/documents/albums/$(albumId)).data.isPublic ||
+        isOwner(firestore.get(/databases/(default)/documents/albums/$(albumId)).data.ownerId) ||
+        isAdmin();
+      allow write: if isSignedIn();
+      allow delete: if 
+        isOwner(firestore.get(/databases/(default)/documents/albums/$(albumId)).data.ownerId) ||
+        isAdmin();
+    }
+    
+    // Reguły dla zdjęć profilowych
+    match /profiles/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if isOwner(userId) || isAdmin();
+    }
+    
+    // Reguły dla zdjęć tymczasowych (np. podczas edycji)
+    match /temp/{userId}/{fileName} {
+      allow read, write: if isOwner(userId);
+      allow delete: if isOwner(userId) || isAdmin();
     }
   }
 } 
