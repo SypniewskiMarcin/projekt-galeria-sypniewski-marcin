@@ -12,7 +12,7 @@ import AlbumView from './AlbumView'; // Importuj komponent AlbumView
 import OptimizedImage from './OptimizedImage';
 import AlbumList from './AlbumList';
 
-function Gallery({ user }) {
+function Gallery({ user, onStartEditing }) {
     const [selectedImageIndex, setSelectedImageIndex] = useState(null);
     const [images, setImages] = useState([]);
     const [isCreateAlbumVisible, setIsCreateAlbumVisible] = useState(false); // Stan do zarządzania widocznością formularza
@@ -26,6 +26,7 @@ function Gallery({ user }) {
     const [albumsPerPage] = useState(10);
     const [selectedAlbumId, setSelectedAlbumId] = useState(null);
     const [error, setError] = useState(null);
+    const [selectedImages, setSelectedImages] = useState([]);
 
     const categories = [
         'all',
@@ -326,6 +327,14 @@ function Gallery({ user }) {
                             onPrev={handlePrev}
                             onNext={handleNext}
                         />
+                    )}
+
+                    {selectedImages.length > 0 && (
+                        <div className="gallery-actions">
+                            <button onClick={() => onStartEditing(selectedImages)}>
+                                Edytuj zdjęcia
+                            </button>
+                        </div>
                     )}
                 </>
             )}

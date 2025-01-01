@@ -190,7 +190,7 @@ const CreateAlbum = ({ user, onClose }) => {
                 <div className="flex space-x-4">
                     <button
                         type="submit"
-                        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        className="create-button flex-1"
                         tabIndex={0}
                     >
                         Utwórz album
@@ -198,7 +198,7 @@ const CreateAlbum = ({ user, onClose }) => {
                     <button
                         type="button"
                         onClick={onClose}
-                        className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                        className="cancel-button flex-1"
                         tabIndex={0}
                     >
                         Anuluj

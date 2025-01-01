@@ -9,8 +9,9 @@ import './AlbumView.css';
 import JSZip from 'jszip';
 import PaymentProcess from './PaymentProcess';
 import OptimizedImage from './OptimizedImage';
+import ImageEditor from './ImageEditor';
 
-const AlbumView = ({ albumId, onBack }) => {
+const AlbumView = ({ albumId, onBack, onStartEditing }) => {
     const [album, setAlbum] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -25,6 +26,8 @@ const AlbumView = ({ albumId, onBack }) => {
     const [isFullAlbumPurchase, setIsFullAlbumPurchase] = useState(false);
     const [viewMode, setViewMode] = useState('square'); // 'square' lub 'natural'
     const [photos, setPhotos] = useState([]);
+    const [showImageEditor, setShowImageEditor] = useState(false);
+    const [editedPhotos, setEditedPhotos] = useState(new Map()); // Przechowuje edytowane wersje
 
     useEffect(() => {
         const fetchAlbum = async () => {
@@ -279,13 +282,13 @@ const AlbumView = ({ albumId, onBack }) => {
     };
 
     // Funkcja do przełączania wyboru zdjęcia
-    const togglePhotoSelection = (photoId) => {
+    const togglePhotoSelection = (photo) => {
         setSelectedPhotos(prev => {
             const newSelection = new Set(prev);
-            if (newSelection.has(photoId)) {
-                newSelection.delete(photoId);
+            if (newSelection.has(photo.url)) {
+                newSelection.delete(photo.url);
             } else {
-                newSelection.add(photoId);
+                newSelection.add(photo.url);
             }
             return newSelection;
         });
@@ -311,6 +314,21 @@ const AlbumView = ({ albumId, onBack }) => {
             console.error('Błąd podczas ładowania zdjęcia:', error);
             return null;
         }
+    };
+
+    // Dodajemy funkcję do obsługi edycji
+    const handleStartEditing = () => {
+        if (selectedPhotos.size === 0) return;
+        setShowImageEditor(true);
+    };
+
+    // Dodaj funkcję zapisywania edytowanych zdjęć
+    const handleSaveEdited = (index, editedImage) => {
+        setEditedPhotos(prev => {
+            const newMap = new Map(prev);
+            newMap.set(editedImage.url, editedImage);
+            return newMap;
+        });
     };
 
     if (loading) {
@@ -367,6 +385,14 @@ const AlbumView = ({ albumId, onBack }) => {
                                 >
                                     Pobierz wybrane ({selectedPhotos.size})
                                 </button>
+                                {isSelectionMode && selectedPhotos.size > 0 && (
+                                    <button
+                                        className="edit-selected-button"
+                                        onClick={handleStartEditing}
+                                    >
+                                        Edytuj wybrane ({selectedPhotos.size})
+                                    </button>
+                                )}
                                 <button 
                                     onClick={() => {
                                         setIsSelectionMode(false);
@@ -465,8 +491,9 @@ const AlbumView = ({ albumId, onBack }) => {
                         <div 
                             key={photo.id} 
                             className={`photo-item ${isSelectionMode ? 'selection-mode' : ''} ${
-                                selectedPhotos.has(photo.id) ? 'selected' : ''
+                                selectedPhotos.has(photo.url) ? 'selected' : ''
                             }`}
+                            onClick={() => togglePhotoSelection(photo)}
                         >
                             <OptimizedImage
                                 src={photo.url}
@@ -481,11 +508,11 @@ const AlbumView = ({ albumId, onBack }) => {
                                     className="selection-overlay"
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        togglePhotoSelection(photo.id);
+                                        togglePhotoSelection(photo);
                                     }}
-                                    aria-label={selectedPhotos.has(photo.id) ? 'Odznacz zdjęcie' : 'Zaznacz zdjęcie'}
+                                    aria-label={selectedPhotos.has(photo.url) ? 'Odznacz zdjęcie' : 'Zaznacz zdjęcie'}
                                 >
-                                    {selectedPhotos.has(photo.id) ? '✓' : '+'}
+                                    {selectedPhotos.has(photo.url) ? '✓' : '+'}
                                 </button>
                             )}
                         </div>
@@ -530,6 +557,18 @@ const AlbumView = ({ albumId, onBack }) => {
                         setSelectedPhotos(new Set());
                     }}
                     isFullAlbum={isFullAlbumPurchase}
+                />
+            )}
+
+            {showImageEditor && (
+                <ImageEditor
+                    images={Array.from(selectedPhotos).map(url => ({
+                        url,
+                        edited: editedPhotos.get(url)
+                    }))}
+                    isOpen={showImageEditor}
+                    onClose={() => setShowImageEditor(false)}
+                    onSave={handleSaveEdited}
                 />
             )}
         </div>
