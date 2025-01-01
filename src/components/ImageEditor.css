@@ -88,9 +88,14 @@
 
 .editor-actions {
     display: flex;
-    justify-content: flex-end;
+    align-items: center;
     gap: 1rem;
     padding: 1rem;
+}
+
+.editor-actions button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .save-button {
@@ -144,4 +149,41 @@ canvas {
     .editor-controls {
         background-color: #2d3748;
     }
+}
+
+.save-progress {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem;
+    background-color: #2d3748;
+    border-radius: 4px;
+    margin-right: auto;
+}
+
+.progress-bar {
+    height: 4px;
+    background-color: #4CAF50;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.loading-spinner {
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.8);
 } 

@@ -28,6 +28,7 @@ const AlbumView = ({ albumId, onBack, onStartEditing }) => {
     const [photos, setPhotos] = useState([]);
     const [showImageEditor, setShowImageEditor] = useState(false);
     const [editedPhotos, setEditedPhotos] = useState(new Map()); // Przechowuje edytowane wersje
+    const [downloadProgress, setDownloadProgress] = useState(0);
 
     useEffect(() => {
         const fetchAlbum = async () => {
@@ -243,38 +244,61 @@ const AlbumView = ({ albumId, onBack, onStartEditing }) => {
             setLoading(true);
             const zip = new JSZip();
             const selectedPhotosArray = Array.from(selectedPhotos);
+            console.log('Rozpoczynam pobieranie wybranych zdjęć:', selectedPhotosArray);
 
-            for (const photoUrl of selectedPhotosArray) {
+            for (let i = 0; i < selectedPhotosArray.length; i++) {
+                const photoUrl = selectedPhotosArray[i];
                 try {
                     const editedPhoto = editedPhotos.get(photoUrl);
+                    const photo = album.photos.find(p => p.url === photoUrl);
+                    
+                    if (!photo) {
+                        console.error('Nie znaleziono zdjęcia:', photoUrl);
+                        continue;
+                    }
+
+                    const fileName = photo.fileName || `zdjecie_${i + 1}.jpg`;
+                    console.log(`Przetwarzanie zdjęcia ${i + 1}/${selectedPhotosArray.length}:`, fileName);
                     
                     if (editedPhoto && editedPhoto.editedBlob) {
-                        // Jeśli mamy edytowaną wersję, użyj jej
-                        zip.file(`zdjecie_edytowane_${editedPhoto.id}.jpg`, editedPhoto.editedBlob);
+                        console.log('Używam edytowanej wersji dla:', fileName);
+                        zip.file(`edytowane_${fileName}`, editedPhoto.editedBlob);
                     } else {
-                        // Jeśli nie ma edytowanej wersji, pobierz oryginał
-                        const photo = album.photos.find(p => p.url === photoUrl);
+                        console.log('Pobieram oryginał dla:', fileName);
                         const imageRef = ref(storage, photo.url);
                         const url = await getDownloadURL(imageRef);
                         const response = await fetch(url);
                         if (!response.ok) throw new Error('Network response was not ok');
                         const blob = await response.blob();
-                        zip.file(`zdjecie_${photo.id}.jpg`, blob);
+                        zip.file(fileName, blob);
                     }
                 } catch (error) {
-                    console.error(`Błąd podczas pobierania zdjęcia:`, error);
+                    console.error(`Błąd podczas pobierania zdjęcia ${i + 1}:`, error);
+                    setError(`Błąd podczas pobierania zdjęcia ${i + 1}`);
+                    // Kontynuuj z następnym zdjęciem zamiast przerywać cały proces
                     continue;
                 }
             }
 
-            const content = await zip.generateAsync({ type: "blob" });
+            console.log('Generowanie archiwum ZIP...');
+            const content = await zip.generateAsync({ 
+                type: "blob",
+                compression: "DEFLATE",
+                compressionOptions: {
+                    level: 6
+                }
+            });
+
+            console.log('Pobieranie archiwum...');
             const link = document.createElement('a');
             link.href = URL.createObjectURL(content);
-            link.download = `${album.name}_wybrane.zip`;
+            link.download = `${album.name}_wybrane_${selectedPhotosArray.length}_zdjec.zip`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(link.href);
+            
+            setAlertMessage(`Pomyślnie pobrano ${selectedPhotosArray.length} zdjęć`);
         } catch (error) {
             console.error('Błąd podczas pobierania wybranych zdjęć:', error);
             setError('Wystąpił błąd podczas pobierania wybranych zdjęć');
@@ -328,12 +352,13 @@ const AlbumView = ({ albumId, onBack, onStartEditing }) => {
 
     // Dodaj funkcję zapisywania edytowanych zdjęć
     const handleSaveEdited = (index, editedImage) => {
+        console.log(`Zapisywanie edytowanego zdjęcia ${index + 1}:`, editedImage);
         setEditedPhotos(prev => {
             const newMap = new Map(prev);
             newMap.set(editedImage.url, editedImage);
             return newMap;
         });
-        setAlertMessage('Zmiany zostały zapisane!');
+        setAlertMessage(`Zdjęcie ${index + 1} zostało zapisane!`);
     };
 
     if (loading) {
@@ -575,6 +600,13 @@ const AlbumView = ({ albumId, onBack, onStartEditing }) => {
                     onClose={() => setShowImageEditor(false)}
                     onSave={handleSaveEdited}
                 />
+            )}
+
+            {downloadProgress > 0 && (
+                <div className="download-progress">
+                    <div className="progress-bar" style={{ width: `${downloadProgress}%` }} />
+                    <span>Pobieranie: {Math.round(downloadProgress)}%</span>
+                </div>
             )}
         </div>
     );
