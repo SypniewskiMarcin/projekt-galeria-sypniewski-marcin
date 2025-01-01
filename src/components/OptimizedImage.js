@@ -59,6 +59,7 @@ const OptimizedImage = ({
             } : undefined}
         >
             <img
+                crossOrigin="anonymous"
                 src={thumbnailSrc}
                 alt={alt}
                 className={`optimized-image thumbnail blur-load ${thumbnailLoaded ? 'loaded' : ''} ${

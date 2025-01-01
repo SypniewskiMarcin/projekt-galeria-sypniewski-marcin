@@ -244,22 +244,26 @@ const AlbumView = ({ albumId, onBack, onStartEditing }) => {
             const zip = new JSZip();
             const selectedPhotosArray = Array.from(selectedPhotos);
 
-            for (const photoId of selectedPhotosArray) {
-                const photo = album.photos.find(p => p.id === photoId);
-                if (photo) {
-                    try {
-                        // Używamy Firebase Storage SDK
+            for (const photoUrl of selectedPhotosArray) {
+                try {
+                    const editedPhoto = editedPhotos.get(photoUrl);
+                    
+                    if (editedPhoto && editedPhoto.editedBlob) {
+                        // Jeśli mamy edytowaną wersję, użyj jej
+                        zip.file(`zdjecie_edytowane_${editedPhoto.id}.jpg`, editedPhoto.editedBlob);
+                    } else {
+                        // Jeśli nie ma edytowanej wersji, pobierz oryginał
+                        const photo = album.photos.find(p => p.url === photoUrl);
                         const imageRef = ref(storage, photo.url);
                         const url = await getDownloadURL(imageRef);
                         const response = await fetch(url);
-                        
                         if (!response.ok) throw new Error('Network response was not ok');
                         const blob = await response.blob();
-                        zip.file(`zdjecie_${photoId}.jpg`, blob);
-                    } catch (error) {
-                        console.error(`Błąd podczas pobierania zdjęcia ${photoId}:`, error);
-                        continue; // Kontynuuj z następnym zdjęciem
+                        zip.file(`zdjecie_${photo.id}.jpg`, blob);
                     }
+                } catch (error) {
+                    console.error(`Błąd podczas pobierania zdjęcia:`, error);
+                    continue;
                 }
             }
 
@@ -329,6 +333,7 @@ const AlbumView = ({ albumId, onBack, onStartEditing }) => {
             newMap.set(editedImage.url, editedImage);
             return newMap;
         });
+        setAlertMessage('Zmiany zostały zapisane!');
     };
 
     if (loading) {

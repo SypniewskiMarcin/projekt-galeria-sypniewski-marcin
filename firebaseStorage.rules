@@ -19,14 +19,15 @@ service firebase.storage {
     // Walidacja przesyłanych plików:
     // - Maksymalny rozmiar: 50MB
     // - Dozwolone tylko pliki JPG/JPEG
+    // - Dodatkowa walidacja dla CORS i metadanych
     function isValidFile() {
       return request.resource.size <= 50 * 1024 * 1024  // 50MB limit
          && (request.resource.contentType == 'image/jpeg' 
-             || request.resource.contentType == 'image/jpg');
+             || request.resource.contentType == 'image/jpg')
+         && request.resource.metadata.size() > 0;  // Wymaga metadanych
     }
 
     // Sprawdza czy użytkownik jest właścicielem zdjęcia
-    // poprzez porównanie ID użytkownika
     function isImageOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
@@ -34,11 +35,14 @@ service firebase.storage {
     // ===== REGUŁY DLA ALBUMÓW =====
     match /albums/{albumId}/{fileName} {
       // Publiczny dostęp do odczytu i listowania zawartości albumów
-      allow read, get: if true;  // Pozwala na pobieranie pojedynczych plików
-      allow list: if true;       // Pozwala na listowanie zawartości albumów
+      // Dodano obsługę CORS dla edycji zdjęć
+      allow read, get: if true;  
+      allow list: if true;       
+      
+      // Obsługa CORS - pozwala na operacje OPTIONS
+      allow options: if true;
       
       // Tylko zalogowani użytkownicy mogą dodawać/aktualizować pliki
-      // z dodatkową walidacją formatu i rozmiaru
       allow create, update: if isAuthenticated() && isValidFile();
       
       // Usuwanie dozwolone dla właściciela lub admina
@@ -47,9 +51,10 @@ service firebase.storage {
 
     // ===== REGUŁY DLA INDYWIDUALNYCH ZDJĘĆ =====
     match /images/{userId}/{allPaths=**} {
-      // Publiczny dostęp do odczytu zdjęć
+      // Publiczny dostęp do odczytu zdjęć z obsługą CORS
       allow read, get: if true;
       allow list: if true;
+      allow options: if true;  // Dla CORS
       
       // Tylko właściciel może dodawać/aktualizować swoje zdjęcia
       allow create, update: if isImageOwner(userId) && isValidFile();
@@ -60,12 +65,23 @@ service firebase.storage {
 
     // ===== REGUŁY DLA METADANYCH =====
     match /metadata/{document=**} {
-      // Publiczny dostęp do odczytu metadanych
       allow read, get: if true;
       allow list: if true;
+      allow options: if true;  // Dla CORS
       
       // Tylko zalogowani użytkownicy mogą modyfikować metadane
       allow write: if isAuthenticated();
+    }
+
+    // ===== REGUŁY DLA EDYTOWANYCH ZDJĘĆ =====
+    match /edited/{userId}/{allPaths=**} {
+      // Dostęp do edytowanych wersji zdjęć
+      allow read: if true;
+      allow options: if true;  // Dla CORS
+      
+      // Tylko właściciel może zapisywać edytowane wersje
+      allow create, update: if isImageOwner(userId) && isValidFile();
+      allow delete: if isImageOwner(userId) || isAdmin();
     }
   }
 }
