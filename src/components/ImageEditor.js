@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './ImageEditor.css';
+import { detectObjects } from '../services/ai/objectDetection';
+import { enhanceImage } from '../services/ai/imageEnhancement';
 
 const ImageEditor = ({ images, onClose, onSave, isOpen }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -13,6 +15,12 @@ const ImageEditor = ({ images, onClose, onSave, isOpen }) => {
   const canvasRef = useRef(null);
   const [savingProgress, setSavingProgress] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAIPanelOpen, setIsAIPanelOpen] = useState(false);
+  const [isSegmentationPanelOpen, setIsSegmentationPanelOpen] = useState(false);
+  const [isAIProcessing, setIsAIProcessing] = useState(false);
+  const [backgroundType, setBackgroundType] = useState('blur');
+  const [customBackground, setCustomBackground] = useState(null);
+  const [backgroundColor, setBackgroundColor] = useState('#000000');
 
   useEffect(() => {
     if (previewMode && !isProcessing && images?.length > 0) {
@@ -179,37 +187,49 @@ const ImageEditor = ({ images, onClose, onSave, isOpen }) => {
         for (let i = 0; i < images.length; i++) {
             try {
                 const currentImage = images[i];
-                console.log(`Rozpoczynam przetwarzanie zdjęcia ${i + 1}:`, currentImage.url);
+                console.log(`Rozpoczynam przetwarzanie zdjęcia ${i + 1}:`, currentImage);
                 setCurrentImageIndex(i);
                 setSavingProgress((i / images.length) * 100);
                 
-                const canvas = await applyFilters(currentImage.url);
-                if (!canvas) {
-                    throw new Error(`Nie udało się przetworzyć zdjęcia ${i + 1}`);
+                let processedImage;
+                if (currentImage.isAIEnhanced) {
+                    // Jeśli obraz był ulepszony przez AI, użyj bezpośrednio zapisanego bloba
+                    processedImage = {
+                        ...currentImage,
+                        editedUrl: currentImage.editedUrl,
+                        editedBlob: currentImage.editedBlob
+                    };
+                } else {
+                    // Dla normalnej edycji, zastosuj filtry
+                    const canvas = await applyFilters(currentImage.url);
+                    if (!canvas) {
+                        throw new Error(`Nie udało się przetworzyć zdjęcia ${i + 1}`);
+                    }
+                    
+                    const blob = await new Promise((resolve, reject) => {
+                        canvas.toBlob(
+                            blob => {
+                                if (blob) {
+                                    resolve(blob);
+                                } else {
+                                    reject(new Error(`Nie udało się utworzyć blob dla zdjęcia ${i + 1}`));
+                                }
+                            },
+                            'image/jpeg',
+                            0.95
+                        );
+                    });
+
+                    const editedImageUrl = URL.createObjectURL(blob);
+                    processedImage = {
+                        ...currentImage,
+                        editedUrl: editedImageUrl,
+                        editedBlob: blob,
+                        adjustments: { brightness, contrast, saturation }
+                    };
                 }
-                
-                const blob = await new Promise((resolve, reject) => {
-                    canvas.toBlob(
-                        blob => {
-                            if (blob) {
-                                resolve(blob);
-                            } else {
-                                reject(new Error(`Nie udało się utworzyć blob dla zdjęcia ${i + 1}`));
-                            }
-                        },
-                        'image/jpeg',
-                        0.95
-                    );
-                });
 
-                const editedImageUrl = URL.createObjectURL(blob);
-                editedImages.push({
-                    ...currentImage,
-                    editedUrl: editedImageUrl,
-                    editedBlob: blob,
-                    adjustments: { brightness, contrast, saturation }
-                });
-
+                editedImages.push(processedImage);
                 console.log(`Zdjęcie ${i + 1} przetworzone pomyślnie`);
             } catch (error) {
                 console.error(`Błąd podczas przetwarzania zdjęcia ${i + 1}:`, error);
@@ -221,7 +241,7 @@ const ImageEditor = ({ images, onClose, onSave, isOpen }) => {
         
         await Promise.all(
             editedImages.map((img, index) => {
-                console.log(`Zapisywanie zdjęcia ${index + 1}:`, img.url);
+                console.log(`Zapisywanie zdjęcia ${index + 1}:`, img);
                 return onSave(index, img);
             })
         );
@@ -249,6 +269,135 @@ const ImageEditor = ({ images, onClose, onSave, isOpen }) => {
       </div>
     )
   );
+
+  const handleCustomBackgroundUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            setCustomBackground(e.target.result);
+        };
+        reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSuperResolution = async () => {
+    try {
+        setIsAIProcessing(true);
+        const currentImage = images[currentImageIndex];
+        
+        console.log('Starting Super Resolution process...');
+        console.log('Current image:', currentImage);
+        
+        // Tworzenie elementu obrazu do przetworzenia
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        console.log('Created image element');
+        
+        await new Promise((resolve, reject) => {
+            img.onload = () => {
+                console.log('Image loaded successfully');
+                console.log('Image dimensions:', img.width, 'x', img.height);
+                resolve();
+            };
+            img.onerror = (e) => {
+                console.error('Error loading image:', e);
+                reject(new Error('Failed to load image'));
+            };
+            img.src = currentImage.url;
+            console.log('Set image source:', currentImage.url);
+        });
+
+        console.log('Starting image enhancement...');
+        // Zastosowanie ulepszenia obrazu
+        const enhancedCanvas = await enhanceImage(img);
+        console.log('Image enhancement completed');
+        
+        // Konwersja canvas do Blob
+        const blob = await new Promise((resolve) => {
+            enhancedCanvas.toBlob(resolve, 'image/jpeg', 0.95);
+        });
+        
+        // Tworzenie URL dla podglądu
+        const enhancedUrl = URL.createObjectURL(blob);
+        console.log('Canvas converted to URL');
+        
+        // Aktualizacja obrazu w edytorze
+        const updatedImages = [...images];
+        updatedImages[currentImageIndex] = {
+            ...currentImage,
+            url: enhancedUrl,
+            editedUrl: enhancedUrl,
+            editedBlob: blob,
+            edited: true,
+            isAIEnhanced: true,
+            originalDimensions: {
+                width: img.width,
+                height: img.height
+            },
+            enhancedDimensions: {
+                width: enhancedCanvas.width,
+                height: enhancedCanvas.height
+            },
+            adjustments: {
+                brightness: 100,
+                contrast: 100,
+                saturation: 100,
+                aiEnhanced: true
+            }
+        };
+        
+        // Aktualizacja obu stanów
+        setEditedImages(updatedImages);
+        images[currentImageIndex] = updatedImages[currentImageIndex];
+        
+        console.log('Super Resolution applied successfully');
+        console.log('Original dimensions:', img.width, 'x', img.height);
+        console.log('Enhanced dimensions:', enhancedCanvas.width, 'x', enhancedCanvas.height);
+        
+    } catch (error) {
+        console.error('Szczegóły błędu podczas przetwarzania Super Resolution:', {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+        });
+        alert('Wystąpił błąd podczas przetwarzania obrazu: ' + error.message);
+    } finally {
+        setIsAIProcessing(false);
+    }
+  };
+
+  const handleSegmentation = async () => {
+    try {
+        setIsAIProcessing(true);
+        const currentImage = images[currentImageIndex];
+        
+        // Tworzenie elementu obrazu do przetworzenia
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = reject;
+            img.src = currentImage.url;
+        });
+
+        // Wykrywanie obiektów na obrazie
+        const detectedObjects = await detectObjects(img);
+        
+        // TODO: Implementacja segmentacji i zmiany tła
+        // Na razie tylko logowanie wykrytych obiektów
+        console.log('Detected objects:', detectedObjects);
+        
+        // Tutaj będzie dalsza implementacja segmentacji
+        // w zależności od wybranego typu tła (blur, solid, custom)
+        
+    } catch (error) {
+        console.error('Błąd podczas segmentacji:', error);
+        alert('Wystąpił błąd podczas przetwarzania obrazu');
+    } finally {
+        setIsAIProcessing(false);
+    }
+  };
 
   return (
     <div className="image-editor-overlay">
@@ -318,6 +467,79 @@ const ImageEditor = ({ images, onClose, onSave, isOpen }) => {
                   value={saturation}
                   onChange={(e) => setSaturation(e.target.value)}
                 />
+              </div>
+
+              <div className="control-group ai-panel">
+                <button 
+                  className="panel-toggle"
+                  onClick={() => setIsAIPanelOpen(!isAIPanelOpen)}
+                >
+                  Ulepszanie AI {isAIPanelOpen ? '▼' : '▶'}
+                </button>
+                
+                {isAIPanelOpen && (
+                  <div className="ai-controls">
+                    <button 
+                      className="ai-button"
+                      onClick={handleSuperResolution}
+                      disabled={isAIProcessing}
+                    >
+                      {isAIProcessing ? 'Przetwarzanie...' : 'Popraw jakość zdjęcia'}
+                    </button>
+                    <div className="processing-info">
+                      {isAIProcessing && <div className="ai-progress">Przetwarzanie AI...</div>}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="control-group segmentation-panel">
+                <button 
+                  className="panel-toggle"
+                  onClick={() => setIsSegmentationPanelOpen(!isSegmentationPanelOpen)}
+                >
+                  Segmentacja i tło {isSegmentationPanelOpen ? '▼' : '▶'}
+                </button>
+                
+                {isSegmentationPanelOpen && (
+                  <div className="segmentation-controls">
+                    <select 
+                      value={backgroundType}
+                      onChange={(e) => setBackgroundType(e.target.value)}
+                      className="background-select"
+                    >
+                      <option value="blur">Rozmyte tło</option>
+                      <option value="solid">Jednolity kolor</option>
+                      <option value="custom">Własne zdjęcie</option>
+                    </select>
+
+                    {backgroundType === 'solid' && (
+                      <input 
+                        type="color"
+                        value={backgroundColor}
+                        onChange={(e) => setBackgroundColor(e.target.value)}
+                        className="color-picker"
+                      />
+                    )}
+
+                    {backgroundType === 'custom' && (
+                      <input 
+                        type="file"
+                        accept="image/*"
+                        onChange={handleCustomBackgroundUpload}
+                        className="file-input"
+                      />
+                    )}
+
+                    <button 
+                      className="segmentation-button"
+                      onClick={handleSegmentation}
+                      disabled={isAIProcessing}
+                    >
+                      {isAIProcessing ? 'Przetwarzanie...' : 'Zastosuj efekt'}
+                    </button>
+                  </div>
+                )}
               </div>
 
               <button 

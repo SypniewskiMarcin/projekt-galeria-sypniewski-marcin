@@ -186,4 +186,80 @@ canvas {
     padding: 20px;
     border-radius: 8px;
     background: rgba(0, 0, 0, 0.8);
+}
+
+/* Nowe style dla paneli AI */
+.ai-panel, .segmentation-panel {
+    background-color: #2d3748;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.panel-toggle {
+    width: 100%;
+    background-color: #4a5568;
+    color: white;
+    padding: 0.75rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-align: left;
+    font-weight: 500;
+}
+
+.panel-toggle:hover {
+    background-color: #2d3748;
+}
+
+.ai-controls, .segmentation-controls {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.ai-button, .segmentation-button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 0.75rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.ai-button:disabled, .segmentation-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.background-select {
+    padding: 0.5rem;
+    border-radius: 4px;
+    background-color: #1a202c;
+    color: white;
+    border: 1px solid #4a5568;
+}
+
+.color-picker {
+    width: 100%;
+    height: 40px;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+}
+
+.file-input {
+    width: 100%;
+    padding: 0.5rem;
+    background-color: #1a202c;
+    color: white;
+    border-radius: 4px;
+    border: 1px solid #4a5568;
+}
+
+.ai-progress {
+    text-align: center;
+    color: #48bb78;
+    font-size: 0.875rem;
 } 
