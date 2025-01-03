@@ -178,10 +178,44 @@ body {
 
 /* Styl komunikatu o błędzie */
 .error-message {
-  color: red;
-  margin-top: 10px;
-  font-size: 0.9em;
-  text-align: center;
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 15px 20px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 100000;
+  animation: slideIn 0.3s ease-out;
+  background-color: #dc2626;
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.error-message button {
+  background: none;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  padding: 0 5px;
+  font-size: 18px;
+  opacity: 0.8;
+}
+
+.error-message button:hover {
+  opacity: 1;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 /* Styl przycisku wylogowania */

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './ImageEditor.css';
 import { detectObjects } from '../services/ai/objectDetection';
-import { enhanceImage } from '../services/ai/imageEnhancement';
+import { enhanceImage, downloadEnhancedImage } from '../services/ai/imageEnhancement';
 
 const ImageEditor = ({ images, onClose, onSave, isOpen }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -11,16 +11,22 @@ const ImageEditor = ({ images, onClose, onSave, isOpen }) => {
   const [saturation, setSaturation] = useState(100);
   const [previewMode, setPreviewMode] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const previewContainerRef = useRef(null);
-  const canvasRef = useRef(null);
-  const [savingProgress, setSavingProgress] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [savingProgress, setSavingProgress] = useState(0);
   const [isAIPanelOpen, setIsAIPanelOpen] = useState(false);
   const [isSegmentationPanelOpen, setIsSegmentationPanelOpen] = useState(false);
   const [isAIProcessing, setIsAIProcessing] = useState(false);
   const [backgroundType, setBackgroundType] = useState('blur');
   const [customBackground, setCustomBackground] = useState(null);
   const [backgroundColor, setBackgroundColor] = useState('#000000');
+  const [alertMessage, setAlertMessage] = useState('');
+  const [error, setError] = useState(null);
+  const [enhancedImageData, setEnhancedImageData] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null);
+
+  const imageRef = useRef(null);
+  const previewContainerRef = useRef(null);
+  const canvasRef = useRef(null);
 
   useEffect(() => {
     if (previewMode && !isProcessing && images?.length > 0) {
@@ -283,87 +289,45 @@ const ImageEditor = ({ images, onClose, onSave, isOpen }) => {
 
   const handleSuperResolution = async () => {
     try {
-        setIsAIProcessing(true);
         const currentImage = images[currentImageIndex];
-        
-        console.log('Starting Super Resolution process...');
-        console.log('Current image:', currentImage);
-        
         // Tworzenie elementu obrazu do przetworzenia
         const img = new Image();
         img.crossOrigin = "anonymous";
-        console.log('Created image element');
         
         await new Promise((resolve, reject) => {
             img.onload = () => {
-                console.log('Image loaded successfully');
-                console.log('Image dimensions:', img.width, 'x', img.height);
+                imageRef.current = img;
                 resolve();
             };
-            img.onerror = (e) => {
-                console.error('Error loading image:', e);
-                reject(new Error('Failed to load image'));
-            };
+            img.onerror = reject;
             img.src = currentImage.url;
-            console.log('Set image source:', currentImage.url);
         });
 
-        console.log('Starting image enhancement...');
-        // Zastosowanie ulepszenia obrazu
-        const enhancedCanvas = await enhanceImage(img);
-        console.log('Image enhancement completed');
+        console.log('Starting AI enhancement...');
+        const result = await enhanceImage(imageRef.current);
         
-        // Konwersja canvas do Blob
-        const blob = await new Promise((resolve) => {
-            enhancedCanvas.toBlob(resolve, 'image/jpeg', 0.95);
-        });
+        // Zapisz wynik w stanie
+        setEnhancedImageData(result.metadata);
         
-        // Tworzenie URL dla podglądu
-        const enhancedUrl = URL.createObjectURL(blob);
-        console.log('Canvas converted to URL');
+        // Aktualizuj podgląd
+        const previewUrl = result.metadata.downloadUrl;
+        setPreviewImage(previewUrl);
         
-        // Aktualizacja obrazu w edytorze
-        const updatedImages = [...images];
-        updatedImages[currentImageIndex] = {
-            ...currentImage,
-            url: enhancedUrl,
-            editedUrl: enhancedUrl,
-            editedBlob: blob,
-            edited: true,
-            isAIEnhanced: true,
-            originalDimensions: {
-                width: img.width,
-                height: img.height
-            },
-            enhancedDimensions: {
-                width: enhancedCanvas.width,
-                height: enhancedCanvas.height
-            },
-            adjustments: {
-                brightness: 100,
-                contrast: 100,
-                saturation: 100,
-                aiEnhanced: true
-            }
-        };
-        
-        // Aktualizacja obu stanów
-        setEditedImages(updatedImages);
-        images[currentImageIndex] = updatedImages[currentImageIndex];
-        
+        setAlertMessage('Zdjęcie zostało ulepszone przez AI!');
         console.log('Super Resolution applied successfully');
-        console.log('Original dimensions:', img.width, 'x', img.height);
-        console.log('Enhanced dimensions:', enhancedCanvas.width, 'x', enhancedCanvas.height);
-        
+        console.log('Enhancement details:', result.metadata);
     } catch (error) {
-        console.error('Szczegóły błędu podczas przetwarzania Super Resolution:', {
-            message: error.message,
-            stack: error.stack,
-            name: error.name
-        });
-        alert('Wystąpił błąd podczas przetwarzania obrazu: ' + error.message);
-    } finally {
-        setIsAIProcessing(false);
+        console.error('AI enhancement error:', error);
+        setError(error.message);
+    }
+  };
+
+  const handleDownloadEnhanced = () => {
+    if (enhancedImageData) {
+        const currentImage = images[currentImageIndex];
+        const originalFileName = currentImage?.url?.split('/').pop() || 'image';
+        const enhancedFileName = `enhanced-${originalFileName}`;
+        downloadEnhancedImage(enhancedImageData, enhancedFileName);
     }
   };
 
@@ -404,6 +368,18 @@ const ImageEditor = ({ images, onClose, onSave, isOpen }) => {
         {isLoading && (
             <div className="loading-overlay">
                 <div className="loading-spinner">Przetwarzanie...</div>
+            </div>
+        )}
+        {error && (
+            <div className="error-message">
+                {error}
+                <button onClick={() => setError(null)}>✕</button>
+            </div>
+        )}
+        {alertMessage && (
+            <div className="alert-message">
+                {alertMessage}
+                <button onClick={() => setAlertMessage('')}>✕</button>
             </div>
         )}
         <div className="image-editor-container">
@@ -587,6 +563,14 @@ const ImageEditor = ({ images, onClose, onSave, isOpen }) => {
             </div>
           </div>
         </div>
+        {enhancedImageData && (
+            <button
+                onClick={handleDownloadEnhanced}
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-4"
+            >
+                Pobierz ulepszony obraz
+            </button>
+        )}
     </div>
   );
 };
