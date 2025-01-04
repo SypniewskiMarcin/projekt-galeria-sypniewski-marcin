@@ -229,8 +229,9 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
-    margin-top: 20px;
-    width: 100%;
+    margin: 20px auto;
+    width: calc(100% - 60px);
+    max-width: 1400px;
     box-sizing: border-box;
 }
 

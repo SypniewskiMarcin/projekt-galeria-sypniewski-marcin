@@ -277,71 +277,39 @@ function Gallery({ user, onStartEditing }) {
                                 onChange={handleCategoryChange}
                                 className="category-select"
                             >
+                                <option value="">Wszystkie kategorie</option>
                                 {categories.map(category => (
                                     <option key={category} value={category}>
-                                        {category.charAt(0).toUpperCase() + category.slice(1)}
+                                        {category}
                                     </option>
                                 ))}
                             </select>
                         </div>
-                    </div>
 
-                    <div className="pagination-controls">
-                        <button
-                            onClick={() => handlePageChange(currentPage - 1)}
-                            disabled={currentPage === 1}
-                            className="pagination-button"
-                        >
-                            ← Poprzednia
-                        </button>
-                        <span className="pagination-info">
-                            Strona {currentPage} z {totalPages}
-                        </span>
-                        <button
-                            onClick={() => handlePageChange(currentPage + 1)}
-                            disabled={currentPage === totalPages}
-                            className="pagination-button"
-                        >
-                            Następna →
-                        </button>
-                    </div>
+                        <AlbumList albums={currentAlbums} onAlbumClick={handleAlbumClick} />
 
-                    <div className="albums-grid">
-                        <AlbumList 
-                            albums={currentAlbums} 
-                            onAlbumClick={handleAlbumClick} 
-                        />
-                    </div>
-
-                    <div className="gallery">
-                        {images.map((image, index) => (
-                            <div key={index} className="gallery-item">
-                                <OptimizedImage
-                                    src={image}
-                                    alt={`Zdjęcie ${index + 1}`}
-                                    containerWidth={400}
-                                    priority={index < 2} // Pierwsze dwa zdjęcia ładowane priorytetowo
-                                />
+                        {albums.length > albumsPerPage && (
+                            <div className="pagination-controls">
+                                <button
+                                    onClick={() => handlePageChange(currentPage - 1)}
+                                    disabled={currentPage === 1}
+                                    className="pagination-button"
+                                >
+                                    ← Poprzednia
+                                </button>
+                                <span className="pagination-info">
+                                    Strona {currentPage} z {totalPages}
+                                </span>
+                                <button
+                                    onClick={() => handlePageChange(currentPage + 1)}
+                                    disabled={currentPage === totalPages}
+                                    className="pagination-button"
+                                >
+                                    Następna →
+                                </button>
                             </div>
-                        ))}
+                        )}
                     </div>
-
-                    {selectedImageIndex !== null && (
-                        <ImageModal
-                            imageUrl={images[selectedImageIndex]}
-                            onClose={() => setSelectedImageIndex(null)}
-                            onPrev={handlePrev}
-                            onNext={handleNext}
-                        />
-                    )}
-
-                    {selectedImages.length > 0 && (
-                        <div className="gallery-actions">
-                            <button onClick={() => onStartEditing(selectedImages)}>
-                                Edytuj zdjęcia
-                            </button>
-                        </div>
-                    )}
                 </>
             )}
         </main>

@@ -1,9 +1,10 @@
 .albums-grid {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    padding: 0;
-    width: 100%;
+    gap: 16px;
+    margin: 20px auto;
+    width: calc(100% - 60px);
+    max-width: 1400px;
     box-sizing: border-box;
 }
 
