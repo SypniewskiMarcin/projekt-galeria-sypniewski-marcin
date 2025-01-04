@@ -216,11 +216,7 @@ const Comments = ({ albumId, photoId = null }) => {
                             <div className="flex justify-end">
                                 <button
                                     type="submit"
-                                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 
-                                             text-white font-medium rounded-xl transition-all duration-200
-                                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-                                             dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed
-                                             hover:shadow-lg active:transform active:scale-95"
+                                    className="comment-submit-button"
                                     disabled={!commentText}
                                 >
                                     Opublikuj komentarz
