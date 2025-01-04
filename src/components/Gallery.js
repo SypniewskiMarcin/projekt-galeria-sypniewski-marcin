@@ -207,6 +207,11 @@ function Gallery({ user, onStartEditing }) {
         }
     };
 
+    const handleAlbumCreated = () => {
+        fetchAlbums(); // Odświeżamy listę albumów
+        setIsCreateAlbumVisible(false); // Zamykamy formularz
+    };
+
     if (loading) {
         return <div className="loading">Ładowanie albumów...</div>;
     }
@@ -231,7 +236,11 @@ function Gallery({ user, onStartEditing }) {
 
                     <div className={`gallery-container ${isCreateAlbumVisible ? 'form-open' : ''}`}>
                         {isCreateAlbumVisible && (
-                            <CreateAlbum user={user} onClose={() => setIsCreateAlbumVisible(false)} />
+                            <CreateAlbum 
+                                user={user} 
+                                onClose={() => setIsCreateAlbumVisible(false)}
+                                onAlbumCreated={handleAlbumCreated}
+                            />
                         )}
 
                         <div className="gallery-controls">

@@ -5,7 +5,7 @@ import { ref } from 'firebase/storage';
 import Alert from './Alert';
 import { auth } from '../firebaseConfig';
 
-const CreateAlbum = ({ user, onClose }) => {
+const CreateAlbum = ({ user, onClose, onAlbumCreated }) => {
     const [formData, setFormData] = useState({
         albumName: '',
         location: '',
@@ -92,9 +92,17 @@ const CreateAlbum = ({ user, onClose }) => {
             const docRef = await addDoc(collection(db, 'albums'), albumData);
             setSuccessMessage('Album został utworzony pomyślnie!');
             setShowAlert(true);
-            setTimeout(() => {
-                onClose();
-            }, 2000);
+            
+            // Wywołujemy funkcję odświeżającą listę
+            if (onAlbumCreated) {
+                setTimeout(() => {
+                    onAlbumCreated();
+                }, 1500); // Dajemy czas na pokazanie komunikatu sukcesu
+            } else {
+                setTimeout(() => {
+                    onClose();
+                }, 1500);
+            }
         } catch (error) {
             console.error('Błąd tworzenia albumu:', error);
             setError('Wystąpił błąd podczas tworzenia albumu.');
