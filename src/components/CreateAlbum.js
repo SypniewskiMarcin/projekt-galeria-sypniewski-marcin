@@ -1,17 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, forwardRef } from 'react';
 import { db, storage } from '../firebaseConfig';
 import { doc, setDoc, addDoc, collection } from 'firebase/firestore';
-import { ref } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import Alert from './Alert';
 import { auth } from '../firebaseConfig';
 
-const CreateAlbum = ({ user, onClose, onAlbumCreated }) => {
+const CreateAlbum = forwardRef(({ user, onClose, onAlbumCreated }, ref) => {
+    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB w bajtach
+    
     const [formData, setFormData] = useState({
         albumName: '',
         location: '',
         isPublic: true,
         isCommercial: false,
         watermark: false,
+        watermarkType: 'text',
+        watermarkVisibility: 'visible',
+        watermarkFile: null,
         creationDate: new Date().toISOString().split('T')[0],
         categories: []
     });
@@ -24,15 +29,43 @@ const CreateAlbum = ({ user, onClose, onAlbumCreated }) => {
         setIsClosing(true);
         setTimeout(() => {
             onClose();
-        }, 300); // czas trwania animacji
+        }, 300);
     };
 
     const handleInputChange = (e) => {
-        const { name, value, type, checked } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value
-        }));
+        const { name, value, type, checked, files } = e.target;
+        if (type === 'file') {
+            const file = files[0];
+            if (file) {
+                // Sprawdzanie typu pliku
+                if (file.type !== 'image/png') {
+                    setError('Dozwolone są tylko pliki PNG.');
+                    setShowAlert(true);
+                    e.target.value = ''; // Resetuj input
+                    return;
+                }
+                
+                // Sprawdzanie rozmiaru pliku
+                if (file.size > MAX_FILE_SIZE) {
+                    setError('Plik nie może być większy niż 50MB.');
+                    setShowAlert(true);
+                    e.target.value = ''; // Resetuj input
+                    return;
+                }
+
+                setFormData(prev => ({
+                    ...prev,
+                    [name]: file
+                }));
+                setError(''); // Wyczyść błąd jeśli był
+                setShowAlert(false);
+            }
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                [name]: type === 'checkbox' ? checked : value
+            }));
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -66,6 +99,21 @@ const CreateAlbum = ({ user, onClose, onAlbumCreated }) => {
                 return;
             }
 
+            let watermarkSettings = {
+                enabled: formData.watermark,
+                type: formData.watermarkType,
+                visibility: formData.watermarkVisibility,
+                text: currentUser.displayName || '',
+                imageUrl: ''
+            };
+
+            // Jeśli wybrano watermark typu 'image' i jest plik, najpierw go wgraj
+            if (formData.watermark && formData.watermarkType === 'image' && formData.watermarkFile) {
+                const watermarkRef = ref(storage, `watermarks/${currentUser.uid}/${formData.watermarkFile.name}`);
+                await uploadBytes(watermarkRef, formData.watermarkFile);
+                watermarkSettings.imageUrl = await getDownloadURL(watermarkRef);
+            }
+
             const albumData = {
                 name: formData.albumName,
                 author: {
@@ -81,11 +129,7 @@ const CreateAlbum = ({ user, onClose, onAlbumCreated }) => {
                     albumPrice: 0,
                     singlePhotoPrice: 0
                 } : null,
-                watermarkSettings: {
-                    enabled: formData.watermark,
-                    type: 'visible',
-                    text: ''
-                },
+                watermarkSettings,
                 photos: []
             };
 
@@ -93,11 +137,10 @@ const CreateAlbum = ({ user, onClose, onAlbumCreated }) => {
             setSuccessMessage('Album został utworzony pomyślnie!');
             setShowAlert(true);
             
-            // Wywołujemy funkcję odświeżającą listę
             if (onAlbumCreated) {
                 setTimeout(() => {
                     onAlbumCreated();
-                }, 1500); // Dajemy czas na pokazanie komunikatu sukcesu
+                }, 1500);
             } else {
                 setTimeout(() => {
                     onClose();
@@ -117,7 +160,11 @@ const CreateAlbum = ({ user, onClose, onAlbumCreated }) => {
     };
 
     return (
-        <form onSubmit={handleSubmit} className={`create-album-form ${isClosing ? 'closing' : ''}`}>
+        <form 
+            ref={ref}
+            onSubmit={handleSubmit} 
+            className={`create-album-form ${isClosing ? 'closing' : ''}`}
+        >
             {error && <p className="error-message" role="alert">{error}</p>}
             {showAlert && (
                 <Alert
@@ -165,43 +212,108 @@ const CreateAlbum = ({ user, onClose, onAlbumCreated }) => {
                 <div className="checkbox-group">
                     <input
                         type="checkbox"
-                        name="isPublic"
+                        id="isPublic"
+                        className="form-checkbox"
                         checked={formData.isPublic}
                         onChange={handleInputChange}
-                        className="form-checkbox"
-                        aria-label="Album publiczny"
-                        tabIndex={0}
+                        name="isPublic"
                     />
-                    <label>Publiczny</label>
+                    <label htmlFor="isPublic">Publiczny</label>
                 </div>
 
                 {formData.isPublic && (
                     <div className="checkbox-group">
                         <input
                             type="checkbox"
-                            name="isCommercial"
+                            id="isCommercial"
+                            className="form-checkbox"
                             checked={formData.isCommercial}
                             onChange={handleInputChange}
-                            className="form-checkbox"
-                            aria-label="Album komercyjny"
-                            tabIndex={0}
+                            name="isCommercial"
                         />
-                        <label>Komercyjny</label>
+                        <label htmlFor="isCommercial">Komercyjny</label>
                     </div>
                 )}
 
                 <div className="checkbox-group">
                     <input
                         type="checkbox"
-                        name="watermark"
-                        checked={formData.watermark}
-                        onChange={handleInputChange}
+                        id="hasWatermark"
                         className="form-checkbox"
-                        aria-label="Dodaj znak wodny"
-                        tabIndex={0}
+                        checked={formData.hasWatermark}
+                        onChange={handleInputChange}
+                        name="hasWatermark"
                     />
-                    <label>Dodaj watermark</label>
+                    <label htmlFor="hasWatermark">Dodaj znak wodny</label>
                 </div>
+
+                {formData.hasWatermark && (
+                    <div className="watermark-options">
+                        <div className="radio-group">
+                            <label>
+                                <input
+                                    type="radio"
+                                    name="watermarkVisibility"
+                                    value="visible"
+                                    checked={formData.watermarkVisibility === 'visible'}
+                                    onChange={handleInputChange}
+                                    className="form-radio"
+                                />
+                                Widoczny znak wodny
+                            </label>
+                            <label>
+                                <input
+                                    type="radio"
+                                    name="watermarkVisibility"
+                                    value="hidden"
+                                    checked={formData.watermarkVisibility === 'hidden'}
+                                    onChange={handleInputChange}
+                                    className="form-radio"
+                                />
+                                Ukryty znak wodny
+                            </label>
+                        </div>
+
+                        <div className="radio-group mt-4">
+                            <label>
+                                <input
+                                    type="radio"
+                                    name="watermarkType"
+                                    value="text"
+                                    checked={formData.watermarkType === 'text'}
+                                    onChange={handleInputChange}
+                                    className="form-radio"
+                                />
+                                Tekst (nazwa użytkownika)
+                            </label>
+                            <label>
+                                <input
+                                    type="radio"
+                                    name="watermarkType"
+                                    value="image"
+                                    checked={formData.watermarkType === 'image'}
+                                    onChange={handleInputChange}
+                                    className="form-radio"
+                                />
+                                Własny plik PNG
+                            </label>
+                        </div>
+
+                        {formData.watermarkType === 'image' && (
+                            <>
+                                <input
+                                    type="file"
+                                    name="watermarkFile"
+                                    onChange={handleInputChange}
+                                    accept=".png"
+                                    className="form-input"
+                                    aria-label="Wybierz plik watermarku"
+                                />
+                                <p className="file-info">Maksymalny rozmiar pliku: 50MB. Tylko format PNG.</p>
+                            </>
+                        )}
+                    </div>
+                )}
 
                 <div className="form-buttons">
                     <button
@@ -223,6 +335,6 @@ const CreateAlbum = ({ user, onClose, onAlbumCreated }) => {
             </div>
         </form>
     );
-};
+});
 
 export default CreateAlbum;
