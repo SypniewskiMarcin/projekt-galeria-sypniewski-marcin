@@ -10,6 +10,7 @@ import JSZip from 'jszip';
 import PaymentProcess from './PaymentProcess';
 import OptimizedImage from './OptimizedImage';
 import ImageEditor from './ImageEditor';
+import Comments from './Comments';
 
 const AlbumView = ({ albumId, onBack, onStartEditing }) => {
     const [album, setAlbum] = useState(null);
@@ -44,6 +45,9 @@ const AlbumView = ({ albumId, onBack, onStartEditing }) => {
                     // Sprawdź czy zalogowany użytkownik jest autorem
                     const currentUser = auth.currentUser;
                     setIsAuthor(currentUser && albumData.author.uid === currentUser.uid);
+
+                    // Pobierz zdjęcia po pobraniu albumu
+                    await fetchPhotos();
                 } else {
                     setError('Album nie został znaleziony');
                 }
@@ -60,8 +64,11 @@ const AlbumView = ({ albumId, onBack, onStartEditing }) => {
 
     const fetchPhotos = async () => {
         try {
+            console.log('Pobieranie zdjęć dla albumu:', albumId);
             const photosRef = collection(db, 'albums', albumId, 'photos');
             const photosSnapshot = await getDocs(photosRef);
+            
+            console.log('Znaleziono zdjęć:', photosSnapshot.size);
             
             const photoPromises = photosSnapshot.docs.map(async (doc) => {
                 const photoData = doc.data();
@@ -75,15 +82,20 @@ const AlbumView = ({ albumId, onBack, onStartEditing }) => {
                         url // aktualizujemy URL
                     };
                 } catch (error) {
-                    console.error(`Błąd podczas pobierania zdjęcia: ${error}`);
+                    console.error(`Błąd podczas pobierania zdjęcia ${doc.id}:`, error);
                     return null;
                 }
             });
 
             const photos = (await Promise.all(photoPromises)).filter(photo => photo !== null);
+            console.log('Pomyślnie pobrano zdjęć:', photos.length);
             setPhotos(photos);
         } catch (error) {
-            console.error('Błąd podczas pobierania zdjęć:', error);
+            console.error('Szczegóły błędu podczas pobierania zdjęć:', {
+                code: error.code,
+                message: error.message,
+                details: error
+            });
             setError('Nie udało się pobrać zdjęć');
         }
     };
@@ -554,18 +566,14 @@ const AlbumView = ({ albumId, onBack, onStartEditing }) => {
                 </div>
             )}
 
-            {selectedImageIndex !== null && (
+            {selectedImageIndex !== null && photos.length > 0 && (
                 <ImageModal
-                    imageUrl={album.photos[selectedImageIndex].url}
+                    imageUrl={photos[selectedImageIndex].url}
                     onClose={() => setSelectedImageIndex(null)}
-                    onPrev={() => setSelectedImageIndex(prev => 
-                        prev > 0 ? prev - 1 : album.photos.length - 1
-                    )}
-                    onNext={() => setSelectedImageIndex(prev => 
-                        prev < album.photos.length - 1 ? prev + 1 : 0
-                    )}
-                    showDownloadButton={isDownloadable(album)}
-                    onDownload={() => handleDownloadPhoto(album.photos[selectedImageIndex])}
+                    onPrev={() => setSelectedImageIndex((prev) => (prev > 0 ? prev - 1 : photos.length - 1))}
+                    onNext={() => setSelectedImageIndex((prev) => (prev < photos.length - 1 ? prev + 1 : 0))}
+                    albumId={albumId}
+                    photoId={photos[selectedImageIndex].id}
                 />
             )}
 
@@ -608,6 +616,11 @@ const AlbumView = ({ albumId, onBack, onStartEditing }) => {
                     <span>Pobieranie: {Math.round(downloadProgress)}%</span>
                 </div>
             )}
+
+            {/* Sekcja komentarzy do albumu */}
+            <div className="album-comments mt-8">
+                <Comments albumId={albumId} />
+            </div>
         </div>
     );
 };
