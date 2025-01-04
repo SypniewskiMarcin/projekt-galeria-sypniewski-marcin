@@ -221,22 +221,19 @@ function Gallery({ user, onStartEditing }) {
             ) : (
                 <>
                     <div className="gallery-header">
-                        <h2>Galeria</h2>
                         <button
                             className="add-album-button"
                             onClick={() => setIsCreateAlbumVisible(true)}
                         >
-                            <span>+</span>
+                            Utwórz nowy album
                         </button>
                     </div>
 
-                    {isCreateAlbumVisible && (
-                        <div className="create-album-modal">
+                    <div className={`gallery-container ${isCreateAlbumVisible ? 'form-open' : ''}`}>
+                        {isCreateAlbumVisible && (
                             <CreateAlbum user={user} onClose={() => setIsCreateAlbumVisible(false)} />
-                        </div>
-                    )}
+                        )}
 
-                    <div className="gallery-container">
                         <div className="gallery-controls">
                             <input
                                 type="text"
@@ -278,33 +275,33 @@ function Gallery({ user, onStartEditing }) {
                                 ))}
                             </select>
                         </div>
+                    </div>
 
-                        <div className="pagination-controls">
-                            <button
-                                onClick={() => handlePageChange(currentPage - 1)}
-                                disabled={currentPage === 1}
-                                className="pagination-button"
-                            >
-                                ← Poprzednia
-                            </button>
-                            <span className="pagination-info">
-                                Strona {currentPage} z {totalPages}
-                            </span>
-                            <button
-                                onClick={() => handlePageChange(currentPage + 1)}
-                                disabled={currentPage === totalPages}
-                                className="pagination-button"
-                            >
-                                Następna →
-                            </button>
-                        </div>
+                    <div className="pagination-controls">
+                        <button
+                            onClick={() => handlePageChange(currentPage - 1)}
+                            disabled={currentPage === 1}
+                            className="pagination-button"
+                        >
+                            ← Poprzednia
+                        </button>
+                        <span className="pagination-info">
+                            Strona {currentPage} z {totalPages}
+                        </span>
+                        <button
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                            className="pagination-button"
+                        >
+                            Następna →
+                        </button>
+                    </div>
 
-                        <div className="albums-grid">
-                            <AlbumList 
-                                albums={currentAlbums} 
-                                onAlbumClick={handleAlbumClick} 
-                            />
-                        </div>
+                    <div className="albums-grid">
+                        <AlbumList 
+                            albums={currentAlbums} 
+                            onAlbumClick={handleAlbumClick} 
+                        />
                     </div>
 
                     <div className="gallery">

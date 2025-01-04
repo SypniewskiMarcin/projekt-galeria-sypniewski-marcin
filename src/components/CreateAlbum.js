@@ -18,6 +18,14 @@ const CreateAlbum = ({ user, onClose }) => {
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
     const [showAlert, setShowAlert] = useState(false);
+    const [isClosing, setIsClosing] = useState(false);
+
+    const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+            onClose();
+        }, 300); // czas trwania animacji
+    };
 
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -101,8 +109,8 @@ const CreateAlbum = ({ user, onClose }) => {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
-            {error && <p className="mb-4 text-red-500 text-sm" role="alert">{error}</p>}
+        <form onSubmit={handleSubmit} className={`create-album-form ${isClosing ? 'closing' : ''}`}>
+            {error && <p className="error-message" role="alert">{error}</p>}
             {showAlert && (
                 <Alert
                     message={successMessage}
@@ -111,7 +119,7 @@ const CreateAlbum = ({ user, onClose }) => {
                 />
             )}
 
-            <div className="space-y-4">
+            <div className="form-content">
                 <input
                     type="text"
                     name="albumName"
@@ -119,7 +127,7 @@ const CreateAlbum = ({ user, onClose }) => {
                     value={formData.albumName}
                     onChange={handleInputChange}
                     onKeyDown={handleKeyDown}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="form-input"
                     aria-label="Nazwa albumu"
                     required
                     tabIndex={0}
@@ -131,7 +139,7 @@ const CreateAlbum = ({ user, onClose }) => {
                     placeholder="Lokalizacja (opcjonalnie)"
                     value={formData.location}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="form-input"
                     aria-label="Lokalizacja"
                     tabIndex={0}
                 />
@@ -141,64 +149,64 @@ const CreateAlbum = ({ user, onClose }) => {
                     name="creationDate"
                     value={formData.creationDate}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="form-input"
                     aria-label="Data utworzenia"
                     tabIndex={0}
                 />
 
-                <div className="flex items-center space-x-2">
+                <div className="checkbox-group">
                     <input
                         type="checkbox"
                         name="isPublic"
                         checked={formData.isPublic}
                         onChange={handleInputChange}
-                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                        className="form-checkbox"
                         aria-label="Album publiczny"
                         tabIndex={0}
                     />
-                    <label className="text-sm text-gray-700">Publiczny</label>
+                    <label>Publiczny</label>
                 </div>
 
                 {formData.isPublic && (
-                    <div className="flex items-center space-x-2">
+                    <div className="checkbox-group">
                         <input
                             type="checkbox"
                             name="isCommercial"
                             checked={formData.isCommercial}
                             onChange={handleInputChange}
-                            className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                            className="form-checkbox"
                             aria-label="Album komercyjny"
                             tabIndex={0}
                         />
-                        <label className="text-sm text-gray-700">Komercyjny</label>
+                        <label>Komercyjny</label>
                     </div>
                 )}
 
-                <div className="flex items-center space-x-2">
+                <div className="checkbox-group">
                     <input
                         type="checkbox"
                         name="watermark"
                         checked={formData.watermark}
                         onChange={handleInputChange}
-                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                        className="form-checkbox"
                         aria-label="Dodaj znak wodny"
                         tabIndex={0}
                     />
-                    <label className="text-sm text-gray-700">Dodaj watermark</label>
+                    <label>Dodaj watermark</label>
                 </div>
 
-                <div className="flex space-x-4">
+                <div className="form-buttons">
                     <button
                         type="submit"
-                        className="create-button flex-1"
+                        className="submit-button"
                         tabIndex={0}
                     >
                         Utwórz album
                     </button>
                     <button
                         type="button"
-                        onClick={onClose}
-                        className="cancel-button flex-1"
+                        onClick={handleClose}
+                        className="cancel-button"
                         tabIndex={0}
                     >
                         Anuluj
