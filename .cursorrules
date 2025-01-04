@@ -60,3 +60,7 @@ Follow these rules when you write code:
 ### Final Notes
 Adhering to these guidelines will ensure all code produced is optimized for the user’s requirements, easy to maintain, and in line with best practices while fully supporting the needs of the described multi-user photo management application.
 
+## Resources
+- TensorFlow.js Documentation: https://js.tensorflow.org/api/latest/
+- Firebase Documentation: https://firebase.google.com/docs
+- React Best Practices: https://reactjs.org/docs/hooks-rules.html

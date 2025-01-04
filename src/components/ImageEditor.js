@@ -255,6 +255,15 @@ const ImageEditor = ({ images, onClose, onSave, isOpen }) => {
         setSavingProgress(100);
         console.log('Wszystkie zdjęcia zapisane pomyślnie');
         
+        // Pobierz ulepszony obraz po zapisaniu zmian
+        if (enhancedImageData) {
+            const currentImage = images[currentImageIndex];
+            // Wyciągnij tylko nazwę pliku z URL, pomijając parametry
+            const originalFileName = currentImage?.url?.split('/').pop()?.split('?')[0] || 'image.jpg';
+            const enhancedFileName = `enhanced-${originalFileName}`;
+            downloadEnhancedImage(enhancedImageData, enhancedFileName);
+        }
+        
         setPreviewMode(false);
         onClose();
     } catch (error) {
@@ -551,7 +560,7 @@ const ImageEditor = ({ images, onClose, onSave, isOpen }) => {
                 className="save-button"
                 disabled={savingProgress > 0}
               >
-                {savingProgress > 0 ? 'Zapisywanie...' : 'Zapisz zmiany'}
+                {savingProgress > 0 ? 'Zapisywanie...' : 'Zapisz i pobierz'}
               </button>
               <button 
                 onClick={onClose} 

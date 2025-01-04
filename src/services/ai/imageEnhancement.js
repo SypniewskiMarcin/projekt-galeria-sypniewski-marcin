@@ -183,7 +183,7 @@ export const enhanceImage = async (imageElement) => {
         console.log('Original dimensions:', imageElement.width, 'x', imageElement.height);
         
         // URL do funkcji serwerowej
-        const enhancementEndpoint = 'https://YOUR_FIREBASE_FUNCTION_URL/enhanceImage';
+        const enhancementEndpoint = 'https://us-central1-projekt-galeria-sypniewski-m.cloudfunctions.net/enhanceImage';
         
         // Wyślij URL obrazu do serwera
         const response = await fetch(enhancementEndpoint, {
@@ -192,7 +192,8 @@ export const enhanceImage = async (imageElement) => {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                imageUrl: imageElement.src
+                imageUrl: imageElement.src,
+                scaleFactor: 4
             })
         });
 
@@ -215,20 +216,22 @@ export const enhanceImage = async (imageElement) => {
         console.log('Enhancement completed');
         console.log('Enhanced dimensions:', enhancedImg.width, 'x', enhancedImg.height);
 
+        // Stwórz canvas o wymiarach 4x większych
+        const outputCanvas = document.createElement('canvas');
+        outputCanvas.width = imageElement.width * 4;
+        outputCanvas.height = imageElement.height * 4;
+        const ctx = outputCanvas.getContext('2d');
+        
+        // Rysuj ulepszony obraz na canvas
+        ctx.drawImage(enhancedImg, 0, 0, outputCanvas.width, outputCanvas.height);
+
         const metadata = {
             originalSize: `${imageElement.width}x${imageElement.height}`,
-            enhancedSize: `${enhancedImg.width}x${enhancedImg.height}`,
+            enhancedSize: `${outputCanvas.width}x${outputCanvas.height}`,
             scaleFactor: 4,
             downloadUrl: enhancedImageUrl,
             blob: enhancedBlob
         };
-
-        // Stwórz canvas dla podglądu
-        const outputCanvas = document.createElement('canvas');
-        outputCanvas.width = enhancedImg.width;
-        outputCanvas.height = enhancedImg.height;
-        const ctx = outputCanvas.getContext('2d');
-        ctx.drawImage(enhancedImg, 0, 0);
 
         return {
             canvas: outputCanvas,
