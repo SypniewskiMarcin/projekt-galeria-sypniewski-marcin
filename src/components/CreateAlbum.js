@@ -1,7 +1,8 @@
-import React, { useState, forwardRef } from 'react';
-import { db, storage } from '../firebaseConfig';
-import { doc, setDoc, addDoc, collection } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import React, { useState, forwardRef, useEffect } from 'react';
+import { db } from '../firebaseConfig';
+import { doc, addDoc, collection, updateDoc } from 'firebase/firestore';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '../firebaseConfig';
 import Alert from './Alert';
 import { auth } from '../firebaseConfig';
 
@@ -13,13 +14,25 @@ const CreateAlbum = forwardRef(({ user, onClose, onAlbumCreated }, ref) => {
         location: '',
         isPublic: true,
         isCommercial: false,
-        watermark: false,
+        hasWatermark: false,
         watermarkType: 'text',
         watermarkVisibility: 'visible',
         watermarkFile: null,
+        watermarkText: '',
         creationDate: new Date().toISOString().split('T')[0],
         categories: []
     });
+
+    // Ustawienie domyślnego tekstu znaku wodnego
+    useEffect(() => {
+        if (auth.currentUser?.displayName) {
+            setFormData(prev => ({
+                ...prev,
+                watermarkText: `Znak wodny "${auth.currentUser.displayName}"`
+            }));
+        }
+    }, []);
+
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
     const [showAlert, setShowAlert] = useState(false);
@@ -68,9 +81,25 @@ const CreateAlbum = forwardRef(({ user, onClose, onAlbumCreated }, ref) => {
         }
     };
 
+    const createAlbumFolders = async (albumId, currentUser) => {
+        const folders = ['photo-original', 'photo-watermarked', 'watermark-png'];
+        
+        // Tworzenie pustego pliku .keep w każdym folderze aby zachować strukturę
+        for (const folder of folders) {
+            const keepFileRef = storageRef(storage, `albums/${albumId}/${folder}/.keep`);
+            const emptyBlob = new Blob([''], { type: 'text/plain' });
+            await uploadBytes(keepFileRef, emptyBlob, {
+                customMetadata: {
+                    createdBy: currentUser.uid,
+                    createdAt: new Date().toISOString()
+                }
+            });
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         try {
             // Walidacja nazwy albumu
             if (formData.albumName.length < 3) {
@@ -100,19 +129,12 @@ const CreateAlbum = forwardRef(({ user, onClose, onAlbumCreated }, ref) => {
             }
 
             let watermarkSettings = {
-                enabled: formData.watermark,
+                enabled: formData.hasWatermark,
                 type: formData.watermarkType,
                 visibility: formData.watermarkVisibility,
-                text: currentUser.displayName || '',
+                text: formData.watermarkText || currentUser.displayName || '',
                 imageUrl: ''
             };
-
-            // Jeśli wybrano watermark typu 'image' i jest plik, najpierw go wgraj
-            if (formData.watermark && formData.watermarkType === 'image' && formData.watermarkFile) {
-                const watermarkRef = ref(storage, `watermarks/${currentUser.uid}/${formData.watermarkFile.name}`);
-                await uploadBytes(watermarkRef, formData.watermarkFile);
-                watermarkSettings.imageUrl = await getDownloadURL(watermarkRef);
-            }
 
             const albumData = {
                 name: formData.albumName,
@@ -127,13 +149,47 @@ const CreateAlbum = forwardRef(({ user, onClose, onAlbumCreated }, ref) => {
                 isCommercial: formData.isCommercial,
                 commercialSettings: formData.isCommercial ? {
                     albumPrice: 0,
-                    singlePhotoPrice: 0
+                    singlePhotoPrice: 0,
+                    allowOriginalDownload: false
                 } : null,
                 watermarkSettings,
-                photos: []
+                photos: [],
+                watermarkedPhotos: {
+                    enabled: formData.hasWatermark,
+                    visibility: formData.watermarkVisibility,
+                    type: formData.watermarkType
+                }
             };
 
-            const docRef = await addDoc(collection(db, 'albums'), albumData);
+            // Tworzenie dokumentu albumu w Firestore
+            const albumRef = await addDoc(collection(db, 'albums'), albumData);
+            const albumId = albumRef.id;
+
+            // Tworzenie struktury folderów
+            await createAlbumFolders(albumId, currentUser);
+
+            // Jeśli wybrano watermark typu 'image' i jest plik, wgraj go do odpowiedniego folderu
+            if (formData.hasWatermark && formData.watermarkType === 'image' && formData.watermarkFile) {
+                const watermarkRef = storageRef(storage, `albums/${albumId}/watermark-png/${formData.watermarkFile.name}`);
+                await uploadBytes(watermarkRef, formData.watermarkFile, {
+                    customMetadata: {
+                        albumId: albumId,
+                        uploadedBy: currentUser.uid,
+                        uploadedByName: currentUser.displayName || '',
+                        uploadedAt: new Date().toISOString(),
+                        originalName: formData.watermarkFile.name,
+                        fileType: formData.watermarkFile.type,
+                        fileSize: formData.watermarkFile.size.toString()
+                    }
+                });
+                watermarkSettings.imageUrl = await getDownloadURL(watermarkRef);
+                
+                // Aktualizacja dokumentu albumu o URL watermarku
+                await updateDoc(doc(db, 'albums', albumId), {
+                    'watermarkSettings.imageUrl': watermarkSettings.imageUrl
+                });
+            }
+
             setSuccessMessage('Album został utworzony pomyślnie!');
             setShowAlert(true);
             
@@ -284,7 +340,7 @@ const CreateAlbum = forwardRef(({ user, onClose, onAlbumCreated }, ref) => {
                                     onChange={handleInputChange}
                                     className="form-radio"
                                 />
-                                Tekst (nazwa użytkownika)
+                                Tekst
                             </label>
                             <label>
                                 <input
@@ -298,6 +354,18 @@ const CreateAlbum = forwardRef(({ user, onClose, onAlbumCreated }, ref) => {
                                 Własny plik PNG
                             </label>
                         </div>
+
+                        {formData.watermarkType === 'text' && (
+                            <input
+                                type="text"
+                                name="watermarkText"
+                                placeholder="Tekst znaku wodnego"
+                                value={formData.watermarkText}
+                                onChange={handleInputChange}
+                                className="form-input"
+                                aria-label="Tekst znaku wodnego"
+                            />
+                        )}
 
                         {formData.watermarkType === 'image' && (
                             <>

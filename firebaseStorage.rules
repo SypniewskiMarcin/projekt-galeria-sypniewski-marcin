@@ -16,15 +16,26 @@ service firebase.storage {
         request.auth.token.email == "kajuchu@gmail.com";
     }
 
-    // Walidacja przesyłanych plików:
-    // - Maksymalny rozmiar: 50MB
-    // - Dozwolone tylko pliki JPG/JPEG
-    // - Dodatkowa walidacja dla CORS i metadanych
-    function isValidFile() {
+    // Walidacja przesyłanych plików zdjęć
+    function isValidImageFile() {
       return request.resource.size <= 50 * 1024 * 1024  // 50MB limit
          && (request.resource.contentType == 'image/jpeg' 
              || request.resource.contentType == 'image/jpg')
          && request.resource.metadata.size() > 0;  // Wymaga metadanych
+    }
+
+    // Walidacja plików watermark
+    function isValidWatermarkFile() {
+      return request.resource.size <= 50 * 1024 * 1024  // 50MB limit
+         && request.resource.contentType == 'image/png'
+         && request.resource.metadata.size() > 0;
+    }
+
+    // Walidacja plików systemowych (.keep)
+    function isValidSystemFile() {
+      return request.resource.size < 1024  // max 1KB
+         && request.resource.contentType == 'text/plain'
+         && request.resource.name.matches('.*/.keep');
     }
 
     // Sprawdza czy użytkownik jest właścicielem zdjęcia
@@ -32,21 +43,29 @@ service firebase.storage {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // ===== REGUŁY DLA ALBUMÓW =====
-    match /albums/{albumId}/{fileName} {
-      // Publiczny dostęp do odczytu i listowania zawartości albumów
-      // Dodano obsługę CORS dla edycji zdjęć
-      allow read, get: if true;  
-      allow list: if true;       
+    // ===== REGUŁY DLA ALBUMÓW I PODFOLDERÓW =====
+    match /albums/{albumId}/{subFolder}/{fileName} {
+      // Funkcja sprawdzająca czy użytkownik jest właścicielem albumu
+      function isAlbumOwner() {
+        return isAuthenticated() && 
+          request.auth.uid == get(/databases/$(database)/documents/albums/$(albumId)).data.author.uid;
+      }
       
-      // Obsługa CORS - pozwala na operacje OPTIONS
-      allow options: if true;
+      // Publiczny dostęp do odczytu dla photo-original i photo-watermarked
+      allow read: if true;
       
-      // Tylko zalogowani użytkownicy mogą dodawać/aktualizować pliki
-      allow create, update: if isAuthenticated() && isValidFile();
+      // Dostęp do watermark-png tylko dla właściciela albumu
+      allow read: if subFolder == 'watermark-png' ? isAlbumOwner() : true;
+      
+      // Upload plików z odpowiednią walidacją w zależności od typu
+      allow create, update: if isAlbumOwner() && (
+        (subFolder in ['photo-original', 'photo-watermarked'] && isValidImageFile()) ||
+        (subFolder == 'watermark-png' && isValidWatermarkFile()) ||
+        isValidSystemFile()
+      );
       
       // Usuwanie dozwolone dla właściciela lub admina
-      allow delete: if isAuthenticated() || isAdmin();
+      allow delete: if isAlbumOwner() || isAdmin();
     }
 
     // ===== REGUŁY DLA INDYWIDUALNYCH ZDJĘĆ =====

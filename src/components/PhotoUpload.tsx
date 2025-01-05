@@ -1,110 +1,96 @@
-import { useState, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { storage, db } from '@/firebaseConfig';
-import { useAuth } from '@/hooks/useAuth';
-import Alert from './Alert';
-import LoadingSpinner from './LoadingSpinner';
+import { storage, db } from '../firebaseConfig';
+import { updateDoc, doc, arrayUnion } from 'firebase/firestore';
+import ProgressBar from './ProgressBar';
 
 interface PhotoUploadProps {
-  onSuccess?: () => void;
-  albumId?: string;
+    albumId: string;
+    hasWatermark: boolean;
+    onUploadComplete: () => void;
 }
 
-/**
- * Komponent PhotoUpload obsługujący przesyłanie zdjęć
- * @param {PhotoUploadProps} props - Właściwości komponentu
- * @returns {JSX.Element} - Wyrenderowany komponent PhotoUpload
- */
-const PhotoUpload = ({ onSuccess, albumId }: PhotoUploadProps) => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string>('');
-  const [success, setSuccess] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const { user } = useAuth();
+const PhotoUpload: React.FC<PhotoUploadProps> = ({ albumId, hasWatermark, onUploadComplete }) => {
+    const [uploadProgress, setUploadProgress] = useState<number>(0);
+    const [uploadMessage, setUploadMessage] = useState<string>('');
+    const [isUploading, setIsUploading] = useState<boolean>(false);
 
-  /**
-   * Obsługa przesyłania pliku
-   * @param {File} file - Plik do przesłania
-   */
-  const handleUpload = async (file: File) => {
-    setLoading(true);
-    setError('');
-    setSuccess(false);
+    const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
 
-    try {
-      // Sprawdzenie typu pliku
-      if (!file.type.startsWith('image/')) {
-        throw new Error('Można przesyłać tylko pliki graficzne');
-      }
+        setIsUploading(true);
+        setUploadProgress(0);
+        setUploadMessage('Przygotowywanie do przesyłania...');
 
-      // Utworzenie referencji do Storage
-      const storageRef = ref(storage, `photos/${Date.now()}_${file.name}`);
-      
-      // Przesłanie pliku
-      await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(storageRef);
+        try {
+            const totalFiles = files.length;
+            let uploadedFiles = 0;
 
-      // Dodanie informacji o zdjęciu do Firestore
-      await addDoc(collection(db, 'photos'), {
-        url: downloadURL,
-        title: file.name,
-        createdAt: serverTimestamp(),
-        userId: user?.uid,
-        albumId: albumId || null
-      });
+            for (const file of files) {
+                // Upload do folderu photo-original
+                const originalRef = ref(storage, `albums/${albumId}/photo-original/${file.name}`);
+                await uploadBytes(originalRef, file, {
+                    customMetadata: {
+                        originalName: file.name,
+                        uploadedAt: new Date().toISOString()
+                    }
+                });
 
-      setSuccess(true);
-      if (onSuccess) onSuccess();
-      
-      // Wyczyszczenie inputa
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Wystąpił błąd podczas przesyłania');
-    } finally {
-      setLoading(false);
-    }
-  };
+                const originalUrl = await getDownloadURL(originalRef);
 
-  return (
-    <div className="space-y-4">
-      {/* Input do wyboru pliku */}
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0])}
-        accept="image/*"
-        className="block w-full text-sm text-gray-500
-          file:mr-4 file:py-2 file:px-4
-          file:rounded-full file:border-0
-          file:text-sm file:font-semibold
-          file:bg-blue-50 file:text-blue-700
-          hover:file:bg-blue-100"
-        disabled={loading}
-      />
+                // Aktualizacja dokumentu albumu
+                await updateDoc(doc(db, 'albums', albumId), {
+                    photos: arrayUnion({
+                        name: file.name,
+                        originalUrl,
+                        uploadedAt: new Date().toISOString(),
+                        processed: false
+                    })
+                });
 
-      {/* Wskaźnik ładowania */}
-      {loading && <LoadingSpinner size="sm" />}
+                uploadedFiles++;
+                const progress = Math.round((uploadedFiles / totalFiles) * 100);
+                setUploadProgress(progress);
+                setUploadMessage(`Przesłano ${uploadedFiles} z ${totalFiles} zdjęć...`);
+            }
 
-      {/* Komunikaty o statusie */}
-      {error && (
-        <Alert 
-          type="error" 
-          message={error} 
-          onClose={() => setError('')}
-        />
-      )}
-      {success && (
-        <Alert 
-          type="success" 
-          message="Zdjęcie zostało przesłane pomyślnie" 
-          onClose={() => setSuccess(false)}
-        />
-      )}
-    </div>
-  );
+            setUploadMessage('Wszystkie zdjęcia zostały przesłane!');
+            setTimeout(() => {
+                setIsUploading(false);
+                if (onUploadComplete) onUploadComplete();
+            }, 2000);
+
+        } catch (error) {
+            console.error('Błąd podczas przesyłania:', error);
+            setUploadMessage('Wystąpił błąd podczas przesyłania.');
+            setTimeout(() => setIsUploading(false), 3000);
+        }
+    }, [albumId, onUploadComplete]);
+
+    return (
+        <div className="w-full">
+            <input
+                type="file"
+                multiple
+                accept="image/jpeg,image/jpg"
+                onChange={handleFileUpload}
+                className="block w-full text-sm text-gray-500
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-full file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-blue-50 file:text-blue-700
+                    hover:file:bg-blue-100"
+                aria-label="Wybierz zdjęcia do przesłania"
+            />
+            {isUploading && (
+                <ProgressBar 
+                    progress={uploadProgress} 
+                    message={uploadMessage} 
+                />
+            )}
+        </div>
+    );
 };
 
 export default PhotoUpload; 
