@@ -35,7 +35,7 @@ async function generateTextWatermark(text, options) {
   const {
     width,
     height,
-    fontSize = 48,
+    fontSize = Math.floor(height * 0.05), // 5% wysokości zdjęcia
     opacity = 0.3,
     color = "rgba(255,255,255,0.5)",
     isHidden = false,
@@ -134,7 +134,7 @@ exports.processWatermark = onRequest((request, response) => {
               {
                 width: metadata.width,
                 height: metadata.height,
-                fontSize: watermarkSettings.fontSize || 48,
+                fontSize: Math.floor(metadata.height * 0.05),
                 opacity: watermarkSettings.opacity || 0.3,
                 color: watermarkSettings.fontColor || "rgba(255,255,255,0.5)",
                 isHidden: watermarkSettings.isHidden || false,
@@ -144,25 +144,35 @@ exports.processWatermark = onRequest((request, response) => {
             processedImage = processedImage.composite([
               {
                 input: watermarkSvg,
-                top: 0,
-                left: 0,
+                gravity: "center",
               },
             ]);
           } else if (watermarkSettings.type === "image") {
-            const watermarkPath = `${folders.watermarkImage}/${fileName}`;
-            const [watermarkExists] = await bucket.file(watermarkPath).exists();
+            // Pobierz listę plików z folderu watermark-png
+            const [files] = await bucket.getFiles({
+              prefix: `${folders.watermarkImage}/`,
+            });
 
-            if (!watermarkExists) {
-              logger.error("Brak pliku watermarku");
-              throw new Error("Watermark image not found");
+            // Znajdź pierwszy plik PNG (pomijając .keep)
+            const watermarkFile = files.find((file) =>
+              file.name.toLowerCase().endsWith(".png") &&
+              !file.name.endsWith("/.keep"),
+            );
+
+            if (!watermarkFile) {
+              logger.error("Brak pliku watermarku w folderze");
+              throw new Error("Watermark image not found in folder");
             }
 
-            const watermarkTempPath = path.join(os.tmpdir(), "watermark_" + fileName);
-            await bucket.file(watermarkPath).download({destination: watermarkTempPath});
+            const watermarkTempPath = path.join(os.tmpdir(), "watermark.png");
+            await watermarkFile.download({destination: watermarkTempPath});
 
             // Dostosuj rozmiar i przezroczystość watermarku
             const watermarkBuffer = await sharp(watermarkTempPath)
-              .resize(Math.floor(metadata.width / 4), Math.floor(metadata.height / 4))
+              .resize(Math.floor(metadata.width * 0.15), null, {
+                fit: "inside",
+                withoutEnlargement: true,
+              })
               .composite([{
                 input: Buffer.from([255, 255, 255, watermarkSettings.isHidden ? 13 : 77]),
                 raw: {
@@ -175,37 +185,12 @@ exports.processWatermark = onRequest((request, response) => {
               }])
               .toBuffer();
 
-            if (watermarkSettings.position === "center") {
-              processedImage = processedImage.composite([
-                {
-                  input: watermarkBuffer,
-                  gravity: "center",
-                },
-              ]);
-            } else if (watermarkSettings.position === "corners") {
-              processedImage = processedImage.composite([
-                {
-                  input: watermarkBuffer,
-                  top: 20,
-                  left: 20,
-                },
-                {
-                  input: watermarkBuffer,
-                  top: 20,
-                  right: 20,
-                },
-                {
-                  input: watermarkBuffer,
-                  bottom: 20,
-                  left: 20,
-                },
-                {
-                  input: watermarkBuffer,
-                  bottom: 20,
-                  right: 20,
-                },
-              ]);
-            }
+            processedImage = processedImage.composite([
+              {
+                input: watermarkBuffer,
+                gravity: "center",
+              },
+            ]);
 
             fs.unlinkSync(watermarkTempPath);
           }
@@ -220,6 +205,7 @@ exports.processWatermark = onRequest((request, response) => {
                 watermarked: "true",
                 watermarkType: watermarkSettings.type,
                 watermarkVisibility: watermarkSettings.isHidden ? "hidden" : "visible",
+                watermarkPosition: "center",
                 processedAt: Date.now(),
               },
             },
@@ -326,6 +312,18 @@ exports.createAlbumStructure = onRequest((request, response) => {
         }
       }));
 
+      // Przygotuj domyślne ustawienia watermarku
+      const defaultWatermarkSettings = {
+        enabled: false,
+        type: "text",
+        text: "",
+        visibility: "visible",
+        isHidden: false,
+        opacity: 0.3,
+        position: "center",
+        fontColor: "rgba(255,255,255,0.5)",
+      };
+
       // Aktualizacja dokumentu albumu w Firestore
       await admin.firestore()
           .collection("albums")
@@ -336,16 +334,15 @@ exports.createAlbumStructure = onRequest((request, response) => {
               watermarked: `${basePath}/photo-watermarked`,
               watermarkImage: `${basePath}/watermark-png`,
             },
-            watermarkSettings: watermarkSettings || {
-              enabled: false,
-              type: "none",
-              visibility: "none",
-              isHidden: false,
-            },
+            watermarkSettings: watermarkSettings || defaultWatermarkSettings,
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           });
 
-      response.json({success: true, folders});
+      response.json({
+        success: true,
+        folders,
+        watermarkSettings: watermarkSettings || defaultWatermarkSettings,
+      });
     } catch (error) {
       logger.error("Error creating album structure:", error);
       response.status(500).send(`Error creating album structure: ${error.message}`);

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
+import { Link, useParams } from 'react-router-dom';
 import { db } from '../firebaseConfig';
+import { getDoc, doc } from 'firebase/firestore';
 import OptimizedImage from './OptimizedImage';
+import ImageModal from './ImageModal';
 import './AlbumGalleryView.css';
 
 const AlbumGalleryView = () => {
@@ -10,6 +11,7 @@ const AlbumGalleryView = () => {
     const [album, setAlbum] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [selectedImageIndex, setSelectedImageIndex] = useState(null);
 
     useEffect(() => {
         const fetchAlbum = async () => {
@@ -51,7 +53,11 @@ const AlbumGalleryView = () => {
 
             <div className="photos-grid">
                 {album.photos?.map((photo, index) => (
-                    <div key={photo.id} className="photo-tile">
+                    <div 
+                        key={photo.id} 
+                        className="photo-tile"
+                        onClick={() => setSelectedImageIndex(index)}
+                    >
                         <OptimizedImage
                             src={photo.url}
                             alt={`Zdjęcie ${index + 1}`}
@@ -60,6 +66,17 @@ const AlbumGalleryView = () => {
                     </div>
                 ))}
             </div>
+
+            {selectedImageIndex !== null && album.photos && (
+                <ImageModal
+                    imageUrl={album.photos[selectedImageIndex].url}
+                    onClose={() => setSelectedImageIndex(null)}
+                    onPrev={() => setSelectedImageIndex((prev) => (prev > 0 ? prev - 1 : album.photos.length - 1))}
+                    onNext={() => setSelectedImageIndex((prev) => (prev < album.photos.length - 1 ? prev + 1 : 0))}
+                    albumId={albumId}
+                    photoId={album.photos[selectedImageIndex].id}
+                />
+            )}
         </div>
     );
 };

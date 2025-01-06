@@ -535,12 +535,17 @@ const AlbumView = ({ albumId, onBack, onStartEditing }) => {
                             className={`photo-item ${isSelectionMode ? 'selection-mode' : ''} ${
                                 selectedPhotos.has(photo.url) ? 'selected' : ''
                             }`}
-                            onClick={() => togglePhotoSelection(photo)}
+                            onClick={() => {
+                                if (isSelectionMode) {
+                                    togglePhotoSelection(photo);
+                                } else {
+                                    setSelectedImageIndex(index);
+                                }
+                            }}
                         >
                             <OptimizedImage
                                 src={photo.url}
                                 alt={`Zdjęcie ${index + 1}`}
-                                onClick={() => setSelectedImageIndex(index)}
                                 containerWidth={viewMode === 'square' ? 250 : undefined}
                                 naturalAspectRatio={viewMode === 'natural'}
                                 priority={index < 4}
@@ -566,14 +571,14 @@ const AlbumView = ({ albumId, onBack, onStartEditing }) => {
                 </div>
             )}
 
-            {selectedImageIndex !== null && photos.length > 0 && (
+            {selectedImageIndex !== null && album?.photos?.length > 0 && (
                 <ImageModal
-                    imageUrl={photos[selectedImageIndex].url}
+                    imageUrl={album.photos[selectedImageIndex].url}
                     onClose={() => setSelectedImageIndex(null)}
-                    onPrev={() => setSelectedImageIndex((prev) => (prev > 0 ? prev - 1 : photos.length - 1))}
-                    onNext={() => setSelectedImageIndex((prev) => (prev < photos.length - 1 ? prev + 1 : 0))}
+                    onPrev={() => setSelectedImageIndex((prev) => (prev > 0 ? prev - 1 : album.photos.length - 1))}
+                    onNext={() => setSelectedImageIndex((prev) => (prev < album.photos.length - 1 ? prev + 1 : 0))}
                     albumId={albumId}
-                    photoId={photos[selectedImageIndex].id}
+                    photoId={album.photos[selectedImageIndex].id}
                 />
             )}
 
