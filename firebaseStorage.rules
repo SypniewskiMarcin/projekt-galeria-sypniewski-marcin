@@ -9,8 +9,12 @@ service firebase.storage {
       return request.auth != null;
     }
 
+    // Sprawdza czy request pochodzi z Cloud Functions
+    function isCloudFunction() {
+      return request.auth.uid == null && request.auth.token.firebase.sign_in_provider == 'google.com';
+    }
+
     // Sprawdza czy zalogowany użytkownik jest administratorem
-    // Obecnie admin jest określony przez konkretny adres email
     function isAdmin() {
       return isAuthenticated() && 
         request.auth.token.email == "kajuchu@gmail.com";
@@ -33,35 +37,46 @@ service firebase.storage {
 
     // Walidacja plików systemowych (.keep)
     function isValidSystemFile() {
-      return request.resource.size < 1024  // max 1KB
-         && request.resource.contentType == 'text/plain'
-         && request.resource.name.matches('.*/.keep');
-    }
-
-    // Sprawdza czy użytkownik jest właścicielem zdjęcia
-    function isImageOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
+      return request.resource.size < 1024;  // max 1KB
     }
 
     // ===== REGUŁY DLA ALBUMÓW I PODFOLDERÓW =====
-    match /albums/{albumId}/{subFolder}/{fileName} {
-      // Funkcja sprawdzająca czy użytkownik jest właścicielem albumu
+    match /albums/{albumId}/{fileName} {
+      // Sprawdza czy użytkownik jest właścicielem albumu
       function isAlbumOwner() {
-        return isAuthenticated() && 
-          request.auth.uid == get(/databases/$(database)/documents/albums/$(albumId)).data.author.uid;
+        let albumDoc = firestore.get(/databases/(default)/documents/albums/$(albumId));
+        return isAuthenticated() && albumDoc != null && 
+          request.auth.uid == albumDoc.data.author.uid;
+      }
+
+      // Bezpośredni upload zdjęć do albumu
+      allow create, update: if isAlbumOwner() && 
+        request.resource.size <= 50 * 1024 * 1024 && 
+        (request.resource.contentType == 'image/jpeg' || request.resource.contentType == 'image/jpg');
+    }
+
+    match /albums/{albumId}/{subFolder}/{fileName} {
+      // Sprawdza czy użytkownik jest właścicielem albumu
+      function isAlbumOwner() {
+        let albumDoc = firestore.get(/databases/(default)/documents/albums/$(albumId));
+        return isAuthenticated() && albumDoc != null && 
+          request.auth.uid == albumDoc.data.author.uid;
       }
       
       // Publiczny dostęp do odczytu dla photo-original i photo-watermarked
-      allow read: if true;
+      allow read: if subFolder in ['photo-original', 'photo-watermarked'];
       
       // Dostęp do watermark-png tylko dla właściciela albumu
       allow read: if subFolder == 'watermark-png' ? isAlbumOwner() : true;
       
+      // Tworzenie plików .keep
+      allow create: if isAuthenticated() && fileName == '.keep';
+      
       // Upload plików z odpowiednią walidacją w zależności od typu
-      allow create, update: if isAlbumOwner() && (
-        (subFolder in ['photo-original', 'photo-watermarked'] && isValidImageFile()) ||
-        (subFolder == 'watermark-png' && isValidWatermarkFile()) ||
-        isValidSystemFile()
+      allow create, update: if (isAlbumOwner() || isCloudFunction()) && (
+        (subFolder == 'photo-original' && isValidImageFile()) ||
+        (subFolder == 'photo-watermarked' && isValidImageFile()) ||
+        (subFolder == 'watermark-png' && isValidWatermarkFile())
       );
       
       // Usuwanie dozwolone dla właściciela lub admina
@@ -70,13 +85,11 @@ service firebase.storage {
 
     // ===== REGUŁY DLA INDYWIDUALNYCH ZDJĘĆ =====
     match /images/{userId}/{allPaths=**} {
-      // Publiczny dostęp do odczytu zdjęć z obsługą CORS
-      allow read, get: if true;
-      allow list: if true;
-      allow options: if true;  // Dla CORS
+      // Publiczny dostęp do odczytu zdjęć
+      allow read: if true;
       
       // Tylko właściciel może dodawać/aktualizować swoje zdjęcia
-      allow create, update: if isImageOwner(userId) && isValidFile();
+      allow create, update: if isImageOwner(userId) && isValidImageFile();
       
       // Właściciel lub admin może usuwać zdjęcia
       allow delete: if isImageOwner(userId) || isAdmin();
@@ -84,9 +97,7 @@ service firebase.storage {
 
     // ===== REGUŁY DLA METADANYCH =====
     match /metadata/{document=**} {
-      allow read, get: if true;
-      allow list: if true;
-      allow options: if true;  // Dla CORS
+      allow read: if true;
       
       // Tylko zalogowani użytkownicy mogą modyfikować metadane
       allow write: if isAuthenticated();
@@ -96,10 +107,9 @@ service firebase.storage {
     match /edited/{userId}/{allPaths=**} {
       // Dostęp do edytowanych wersji zdjęć
       allow read: if true;
-      allow options: if true;  // Dla CORS
       
       // Tylko właściciel może zapisywać edytowane wersje
-      allow create, update: if isImageOwner(userId) && isValidFile();
+      allow create, update: if isImageOwner(userId) && isValidImageFile();
       allow delete: if isImageOwner(userId) || isAdmin();
     }
   }

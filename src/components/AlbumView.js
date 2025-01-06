@@ -120,7 +120,7 @@ const AlbumView = ({ albumId, onBack, onStartEditing }) => {
             const timestamp = new Date().getTime();
             const safeFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
             const fileName = `${timestamp}_${safeFileName}`;
-            const storagePath = `albums/${albumId}/${fileName}`;
+            const storagePath = `albums/${albumId}/photo-original/${fileName}`;
 
             console.log('Ścieżka zapisu:', storagePath);
             
