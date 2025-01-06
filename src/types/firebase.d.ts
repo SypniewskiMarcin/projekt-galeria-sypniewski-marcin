@@ -31,4 +31,30 @@ interface Album {
         editors: string[];
         viewers: string[];
     };
+    watermarkSettings?: {
+        enabled: boolean;
+        type: 'text' | 'image' | 'invisible';
+        text?: string;
+        fontSize?: number;
+        fontColor?: string;
+        opacity?: number;
+        position?: 'center' | 'corners' | 'tiled';
+        angle?: number;
+        fontStyle?: string;
+    };
+    folders?: {
+        original: string;
+        watermarked: string;
+        watermarkImage: string;
+    };
+    processingStatus?: {
+        [fileName: string]: {
+            status: 'pending' | 'processing' | 'completed' | 'error';
+            attempt?: number;
+            startedAt?: Timestamp;
+            completedAt?: Timestamp;
+            failedAt?: Timestamp;
+            error?: string;
+        };
+    };
 } 
