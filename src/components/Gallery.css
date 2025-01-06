@@ -1323,3 +1323,22 @@ main {
         gap: 6px;
     }
 }
+
+.add-album-button.form-open {
+    background: var(--color-error);
+    box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.1), 
+                0 2px 4px -1px rgba(220, 38, 38, 0.06);
+}
+
+.add-album-button.form-open:hover {
+    background: var(--color-error-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px -2px rgba(220, 38, 38, 0.15), 
+                0 3px 6px -2px rgba(220, 38, 38, 0.1),
+                0 0 0 4px rgba(220, 38, 38, 0.1);
+}
+
+.add-album-button.form-open:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px -1px rgba(220, 38, 38, 0.1);
+}

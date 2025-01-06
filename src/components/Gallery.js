@@ -249,8 +249,8 @@ function Gallery({ user, onStartEditing }) {
                 <>
                     <div className="gallery-header">
                         <button
-                            className="add-album-button"
-                            onClick={() => setIsCreateAlbumVisible(true)}
+                            className={`add-album-button ${isCreateAlbumVisible ? 'form-open' : ''}`}
+                            onClick={() => setIsCreateAlbumVisible(!isCreateAlbumVisible)}
                         >
                             <span className="button-content">
                                 <svg 

@@ -216,192 +216,192 @@ const CreateAlbum = forwardRef(({ user, onClose, onAlbumCreated }, ref) => {
     };
 
     return (
-        <form 
-            ref={ref}
-            onSubmit={handleSubmit} 
-            className={`create-album-form ${isClosing ? 'closing' : ''}`}
-        >
-            {error && <p className="error-message" role="alert">{error}</p>}
+        <div className="create-album-container">
             {showAlert && (
                 <Alert
-                    message={successMessage}
+                    message={error || successMessage}
                     onClose={() => setShowAlert(false)}
-                    type="success"
+                    type={error ? 'error' : 'success'}
                 />
             )}
-
-            <div className="form-content">
-                <input
-                    type="text"
-                    name="albumName"
-                    placeholder="Nazwa albumu"
-                    value={formData.albumName}
-                    onChange={handleInputChange}
-                    onKeyDown={handleKeyDown}
-                    className="form-input"
-                    aria-label="Nazwa albumu"
-                    required
-                    tabIndex={0}
-                />
-
-                <input
-                    type="text"
-                    name="location"
-                    placeholder="Lokalizacja (opcjonalnie)"
-                    value={formData.location}
-                    onChange={handleInputChange}
-                    className="form-input"
-                    aria-label="Lokalizacja"
-                    tabIndex={0}
-                />
-
-                <input
-                    type="date"
-                    name="creationDate"
-                    value={formData.creationDate}
-                    onChange={handleInputChange}
-                    className="form-input"
-                    aria-label="Data utworzenia"
-                    tabIndex={0}
-                />
-
-                <div className="checkbox-group">
+            <form 
+                ref={ref}
+                onSubmit={handleSubmit} 
+                className={`create-album-form ${isClosing ? 'closing' : ''}`}
+            >
+                <div className="form-content">
                     <input
-                        type="checkbox"
-                        id="isPublic"
-                        className="form-checkbox"
-                        checked={formData.isPublic}
+                        type="text"
+                        name="albumName"
+                        placeholder="Nazwa albumu"
+                        value={formData.albumName}
                         onChange={handleInputChange}
-                        name="isPublic"
+                        onKeyDown={handleKeyDown}
+                        className="form-input"
+                        aria-label="Nazwa albumu"
+                        required
+                        tabIndex={0}
                     />
-                    <label htmlFor="isPublic">Publiczny</label>
-                </div>
 
-                {formData.isPublic && (
+                    <input
+                        type="text"
+                        name="location"
+                        placeholder="Lokalizacja (opcjonalnie)"
+                        value={formData.location}
+                        onChange={handleInputChange}
+                        className="form-input"
+                        aria-label="Lokalizacja"
+                        tabIndex={0}
+                    />
+
+                    <input
+                        type="date"
+                        name="creationDate"
+                        value={formData.creationDate}
+                        onChange={handleInputChange}
+                        className="form-input"
+                        aria-label="Data utworzenia"
+                        tabIndex={0}
+                    />
+
                     <div className="checkbox-group">
                         <input
                             type="checkbox"
-                            id="isCommercial"
+                            id="isPublic"
                             className="form-checkbox"
-                            checked={formData.isCommercial}
+                            checked={formData.isPublic}
                             onChange={handleInputChange}
-                            name="isCommercial"
+                            name="isPublic"
                         />
-                        <label htmlFor="isCommercial">Komercyjny</label>
+                        <label htmlFor="isPublic">Publiczny</label>
                     </div>
-                )}
 
-                <div className="checkbox-group">
-                    <input
-                        type="checkbox"
-                        id="hasWatermark"
-                        className="form-checkbox"
-                        checked={formData.hasWatermark}
-                        onChange={handleInputChange}
-                        name="hasWatermark"
-                    />
-                    <label htmlFor="hasWatermark">Dodaj znak wodny</label>
-                </div>
-
-                {formData.hasWatermark && (
-                    <div className="watermark-options">
-                        <div className="radio-group">
-                            <label>
-                                <input
-                                    type="radio"
-                                    name="watermarkVisibility"
-                                    value="visible"
-                                    checked={formData.watermarkVisibility === 'visible'}
-                                    onChange={handleInputChange}
-                                    className="form-radio"
-                                />
-                                Widoczny znak wodny
-                            </label>
-                            <label>
-                                <input
-                                    type="radio"
-                                    name="watermarkVisibility"
-                                    value="hidden"
-                                    checked={formData.watermarkVisibility === 'hidden'}
-                                    onChange={handleInputChange}
-                                    className="form-radio"
-                                />
-                                Ukryty znak wodny
-                            </label>
-                        </div>
-
-                        <div className="radio-group mt-4">
-                            <label>
-                                <input
-                                    type="radio"
-                                    name="watermarkType"
-                                    value="text"
-                                    checked={formData.watermarkType === 'text'}
-                                    onChange={handleInputChange}
-                                    className="form-radio"
-                                />
-                                Tekst
-                            </label>
-                            <label>
-                                <input
-                                    type="radio"
-                                    name="watermarkType"
-                                    value="image"
-                                    checked={formData.watermarkType === 'image'}
-                                    onChange={handleInputChange}
-                                    className="form-radio"
-                                />
-                                Własny plik PNG
-                            </label>
-                        </div>
-
-                        {formData.watermarkType === 'text' && (
+                    {formData.isPublic && (
+                        <div className="checkbox-group">
                             <input
-                                type="text"
-                                name="watermarkText"
-                                placeholder="Tekst znaku wodnego"
-                                value={formData.watermarkText}
+                                type="checkbox"
+                                id="isCommercial"
+                                className="form-checkbox"
+                                checked={formData.isCommercial}
                                 onChange={handleInputChange}
-                                className="form-input"
-                                aria-label="Tekst znaku wodnego"
+                                name="isCommercial"
                             />
-                        )}
+                            <label htmlFor="isCommercial">Komercyjny</label>
+                        </div>
+                    )}
 
-                        {formData.watermarkType === 'image' && (
-                            <>
-                                <input
-                                    type="file"
-                                    name="watermarkFile"
-                                    onChange={handleInputChange}
-                                    accept=".png"
-                                    className="form-input"
-                                    aria-label="Wybierz plik watermarku"
-                                />
-                                <p className="file-info">Maksymalny rozmiar pliku: 50MB. Tylko format PNG.</p>
-                            </>
-                        )}
+                    <div className="checkbox-group">
+                        <input
+                            type="checkbox"
+                            id="hasWatermark"
+                            className="form-checkbox"
+                            checked={formData.hasWatermark}
+                            onChange={handleInputChange}
+                            name="hasWatermark"
+                        />
+                        <label htmlFor="hasWatermark">Dodaj znak wodny</label>
                     </div>
-                )}
 
-                <div className="form-buttons">
-                    <button
-                        type="submit"
-                        className="submit-button"
-                        tabIndex={0}
-                    >
-                        Utwórz album
-                    </button>
-                    <button
-                        type="button"
-                        onClick={handleClose}
-                        className="cancel-button"
-                        tabIndex={0}
-                    >
-                        Anuluj
-                    </button>
+                    {formData.hasWatermark && (
+                        <div className="watermark-options">
+                            <div className="radio-group">
+                                <label>
+                                    <input
+                                        type="radio"
+                                        name="watermarkVisibility"
+                                        value="visible"
+                                        checked={formData.watermarkVisibility === 'visible'}
+                                        onChange={handleInputChange}
+                                        className="form-radio"
+                                    />
+                                    Widoczny znak wodny
+                                </label>
+                                <label>
+                                    <input
+                                        type="radio"
+                                        name="watermarkVisibility"
+                                        value="hidden"
+                                        checked={formData.watermarkVisibility === 'hidden'}
+                                        onChange={handleInputChange}
+                                        className="form-radio"
+                                    />
+                                    Ukryty znak wodny
+                                </label>
+                            </div>
+
+                            <div className="radio-group mt-4">
+                                <label>
+                                    <input
+                                        type="radio"
+                                        name="watermarkType"
+                                        value="text"
+                                        checked={formData.watermarkType === 'text'}
+                                        onChange={handleInputChange}
+                                        className="form-radio"
+                                    />
+                                    Tekst
+                                </label>
+                                <label>
+                                    <input
+                                        type="radio"
+                                        name="watermarkType"
+                                        value="image"
+                                        checked={formData.watermarkType === 'image'}
+                                        onChange={handleInputChange}
+                                        className="form-radio"
+                                    />
+                                    Własny plik PNG
+                                </label>
+                            </div>
+
+                            {formData.watermarkType === 'text' && (
+                                <input
+                                    type="text"
+                                    name="watermarkText"
+                                    placeholder="Tekst znaku wodnego"
+                                    value={formData.watermarkText}
+                                    onChange={handleInputChange}
+                                    className="form-input"
+                                    aria-label="Tekst znaku wodnego"
+                                />
+                            )}
+
+                            {formData.watermarkType === 'image' && (
+                                <>
+                                    <input
+                                        type="file"
+                                        name="watermarkFile"
+                                        onChange={handleInputChange}
+                                        accept=".png"
+                                        className="form-input"
+                                        aria-label="Wybierz plik watermarku"
+                                    />
+                                    <p className="file-info">Maksymalny rozmiar pliku: 50MB. Tylko format PNG.</p>
+                                </>
+                            )}
+                        </div>
+                    )}
+
+                    <div className="form-buttons">
+                        <button
+                            type="submit"
+                            className="submit-button"
+                            tabIndex={0}
+                        >
+                            Utwórz album
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleClose}
+                            className="cancel-button"
+                            tabIndex={0}
+                        >
+                            Anuluj
+                        </button>
+                    </div>
                 </div>
-            </div>
-        </form>
+            </form>
+        </div>
     );
 });
 
