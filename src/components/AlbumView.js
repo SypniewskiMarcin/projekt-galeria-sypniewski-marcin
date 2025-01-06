@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db, storage, auth } from '../firebaseConfig';
-import { doc, getDoc, updateDoc, arrayUnion, collection, getDocs } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { doc, getDoc, updateDoc, arrayUnion, collection, getDocs, arrayRemove, deleteDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import ImageModal from './ImageModal';
 import Alert from './Alert';
 import ViewToggle from './ViewToggle';
@@ -373,6 +373,75 @@ const AlbumView = ({ albumId, onBack, onStartEditing }) => {
         setAlertMessage(`Zdjęcie ${index + 1} zostało zapisane!`);
     };
 
+    const handleDeleteSelected = async () => {
+        if (!isAuthor || selectedPhotos.size === 0) return;
+        
+        if (window.confirm(`Czy na pewno chcesz usunąć ${selectedPhotos.size} wybranych zdjęć?`)) {
+            try {
+                setLoading(true);
+                const selectedPhotosArray = Array.from(selectedPhotos);
+                
+                // Usuwanie zdjęć z Storage i Firestore
+                for (const photoUrl of selectedPhotosArray) {
+                    const photo = album.photos.find(p => p.url === photoUrl);
+                    if (photo) {
+                        // Usuwanie z Storage
+                        const storageRef = ref(storage, photo.url);
+                        await deleteObject(storageRef);
+                        
+                        // Usuwanie z Firestore
+                        const albumRef = doc(db, 'albums', albumId);
+                        await updateDoc(albumRef, {
+                            photos: arrayRemove(photo)
+                        });
+                    }
+                }
+
+                setAlertMessage(`Pomyślnie usunięto ${selectedPhotos.size} zdjęć`);
+                setSelectedPhotos(new Set());
+                setIsSelectionMode(false);
+                
+                // Odświeżenie danych albumu
+                const albumDoc = await getDoc(doc(db, 'albums', albumId));
+                if (albumDoc.exists()) {
+                    setAlbum({ id: albumDoc.id, ...albumDoc.data() });
+                }
+            } catch (error) {
+                console.error('Błąd podczas usuwania zdjęć:', error);
+                setError('Wystąpił błąd podczas usuwania zdjęć');
+            } finally {
+                setLoading(false);
+            }
+        }
+    };
+
+    const handleDeleteAlbum = async () => {
+        if (!isAuthor) return;
+        
+        if (window.confirm('Czy na pewno chcesz usunąć cały album? Tej operacji nie można cofnąć.')) {
+            try {
+                setLoading(true);
+                
+                // Usuwanie wszystkich zdjęć z Storage
+                for (const photo of album.photos) {
+                    const storageRef = ref(storage, photo.url);
+                    await deleteObject(storageRef);
+                }
+                
+                // Usuwanie dokumentu albumu z Firestore
+                await deleteDoc(doc(db, 'albums', albumId));
+                
+                setAlertMessage('Album został pomyślnie usunięty');
+                onBack(); // Powrót do galerii
+            } catch (error) {
+                console.error('Błąd podczas usuwania albumu:', error);
+                setError('Wystąpił błąd podczas usuwania albumu');
+            } finally {
+                setLoading(false);
+            }
+        }
+    };
+
     if (loading) {
         return <div className="loading">Ładowanie albumu...</div>;
     }
@@ -626,6 +695,46 @@ const AlbumView = ({ albumId, onBack, onStartEditing }) => {
             <div className="album-comments mt-8">
                 <Comments albumId={albumId} />
             </div>
+
+            {isAuthor && (
+                <div className="album-actions">
+                    {!isSelectionMode ? (
+                        <>
+                            <button 
+                                onClick={() => setIsSelectionMode(true)}
+                                className="select-button"
+                            >
+                                Wybierz zdjęcia do usunięcia
+                            </button>
+                            <button 
+                                onClick={handleDeleteAlbum}
+                                className="delete-album-button"
+                            >
+                                Usuń cały album
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <button 
+                                onClick={handleDeleteSelected}
+                                className="delete-selected-button"
+                                disabled={selectedPhotos.size === 0}
+                            >
+                                Usuń wybrane ({selectedPhotos.size})
+                            </button>
+                            <button 
+                                onClick={() => {
+                                    setIsSelectionMode(false);
+                                    setSelectedPhotos(new Set());
+                                }}
+                                className="cancel-selection-button"
+                            >
+                                ✕
+                            </button>
+                        </>
+                    )}
+                </div>
+            )}
         </div>
     );
 };

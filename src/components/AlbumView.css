@@ -641,4 +641,50 @@
     height: 4px;
     background: #4CAF50;
     border-radius: 2px;
+}
+
+.delete-selected-button,
+.delete-album-button {
+    background: var(--color-error, #dc2626);
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.delete-selected-button:hover,
+.delete-album-button:hover {
+    background: var(--color-error-dark, #b91c1c);
+    transform: translateY(-1px);
+}
+
+.delete-selected-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Dodajemy większy odstęp między przyciskami w sekcji akcji */
+.album-actions {
+    display: flex;
+    gap: 12px;
+    margin: 16px 0;
+    flex-wrap: wrap;
+}
+
+/* Style dla mobile */
+@media (max-width: 640px) {
+    .album-actions {
+        gap: 8px;
+        margin: 12px 0;
+    }
+
+    .delete-selected-button,
+    .delete-album-button {
+        padding: 6px 12px;
+        font-size: 14px;
+    }
 } 
