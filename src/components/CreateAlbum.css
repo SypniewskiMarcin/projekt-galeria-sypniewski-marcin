@@ -11,115 +11,120 @@
     z-index: 1000;
 }
 
-.create-album-modal form {
+.create-album-form {
     background: var(--color-surface);
     padding: var(--spacing-4);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-lg);
     width: 90%;
     max-width: 500px;
+    color: var(--color-text);
 }
 
-/* Styl dla przycisków */
-.create-album-modal button {
+/* Podstawowe style przycisków */
+.btn {
     padding: var(--spacing-2) var(--spacing-4);
     border-radius: var(--radius-md);
     font-weight: 500;
-    transition: background-color 0.3s, transform 0.2s;
+    transition: all 0.3s ease;
     border: none;
     cursor: pointer;
+    margin: 0 5px;
+    color: white;
 }
 
-.create-album-modal button:hover {
+.btn:hover {
     transform: translateY(-2px);
 }
 
-.create-album-modal button:focus {
+.btn:focus {
     outline: none;
     box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.5);
 }
 
-/* Styl dla przycisku utwórz album */
-.create-album-modal .create-button {
-    background-color: var(--color-primary);
-    color: white;
+/* Przyciski akcji */
+.btn-primary {
+    background-color: var(--color-primary, green);
 }
 
-.create-album-modal .create-button:hover {
-    background-color: var(--color-primary-dark);
+.btn-primary:hover {
+    background-color: var(--color-primary-dark, red);
 }
 
-/* Styl dla przycisku anuluj */
-.create-album-modal .cancel-button {
+.btn-secondary {
+    background-color: var(--color-error, #dc2626);
+}
+
+.btn-secondary:hover {
+    background-color: var(--color-error-dark, #b91c1c);
+}
+
+/* Style formularza */
+.form-input {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
     background-color: var(--color-background);
     color: var(--color-text);
-    border: 1px solid var(--color-border);
 }
 
-.create-album-modal .cancel-button:hover {
-    background-color: var(--color-border);
-}
-
-/* Dark mode */
-@media (prefers-color-scheme: dark) {
-    .create-album-modal form {
-        background: var(--color-surface);
-    }
-
-    .create-album-modal .create-button {
-        background-color: var(--color-primary);
-    }
-
-    .create-album-modal .cancel-button {
-        background-color: var(--color-background);
-        border: 1px solid var(--color-border);
-    }
-}
-
-/* Styl dla przycisku dodawania albumu */
-.add-album-button {
-    padding: var(--spacing-2) var(--spacing-4);
-    border-radius: var(--radius-md);
-    background-color: var(--color-primary);
-    color: white;
-    font-weight: 500;
-    transition: background-color 0.3s, transform 0.2s;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-}
-
-.add-album-button span {
-    font-size: 1.5em;
-}
-
-.add-album-button:hover {
-    background-color: var(--color-primary-dark);
-    transform: translateY(-2px);
-}
-
-.add-album-button:focus {
+.form-input:focus {
     outline: none;
-    box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.5);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+}
+
+/* Grupy kontrolek */
+.control-group {
+    margin: 10px 0;
+    color: var(--color-text);
+}
+
+.control-group input[type="checkbox"],
+.control-group input[type="radio"] {
+    margin-right: 8px;
+}
+
+.control-group label {
+    margin-left: 5px;
 }
 
 /* Dark mode */
 @media (prefers-color-scheme: dark) {
-    .add-album-button {
-        background-color: var(--color-primary);
-        color: white;
+    .create-album-form {
+        background: var(--color-surface-dark);
     }
 
-    .add-album-button:hover {
+    .form-input {
+        background-color: var(--color-background-dark);
+        border-color: var(--color-border-dark);
+        color: var(--color-text-light);
+    }
+
+    .btn-primary {
+        background-color: var(--color-primary);
+    }
+
+    .btn-primary:hover {
         background-color: var(--color-primary-dark);
     }
+
+    .btn-secondary {
+        background-color: var(--color-error, #dc2626);
+    }
+
+    .btn-secondary:hover {
+        background-color: var(--color-error-dark, #b91c1c);
+    }
+
+    .control-group {
+        color: var(--color-text-light);
+    }
 }
 
-/* Styl dla nagłówka galerii */
+/* Nagłówek galerii */
 .gallery-header {
     display: flex;
     justify-content: space-between;

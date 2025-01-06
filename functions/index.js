@@ -7,13 +7,13 @@ const logger = require("firebase-functions/logger");
 const sharp = require("sharp");
 const admin = require("firebase-admin");
 const cors = require("cors")({origin: true});
-const fetch = (...args) =>
-  import("node-fetch").then(({default: fetch}) => fetch(...args));
+const nodeFetch = require("node-fetch");
 const path = require("path");
 const os = require("os");
 const fs = require("fs");
 const tf = require("@tensorflow/tfjs-node");
 const cocoSsd = require("@tensorflow-models/coco-ssd");
+const cv = require("@u4/opencv4nodejs");
 
 // Inicjalizacja aplikacji Firebase Admin
 admin.initializeApp();
@@ -26,7 +26,6 @@ admin.initializeApp();
 exports.enhanceImage = onRequest(async (request, response) => {
   return cors(request, response, async () => {
     try {
-      // Sprawdzenie metody HTTP
       if (request.method !== "POST") {
         return response.status(405).send("Method Not Allowed");
       }
@@ -39,10 +38,11 @@ exports.enhanceImage = onRequest(async (request, response) => {
       logger.info("Processing image:", imageUrl);
 
       try {
-        // Pobranie obrazu z URL
-        const imageResponse = await fetch(imageUrl);
+        const imageResponse = await nodeFetch(imageUrl);
         if (!imageResponse.ok) {
-          throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
+          const errorMsg = "Failed to fetch image: " +
+              imageResponse.statusText;
+          throw new Error(errorMsg);
         }
 
         const arrayBuffer = await imageResponse.arrayBuffer();
@@ -50,7 +50,6 @@ exports.enhanceImage = onRequest(async (request, response) => {
 
         logger.info("Image fetched successfully, size:", imageBuffer.length);
 
-        // Przetwarzanie obrazu za pomocą sharp
         const enhancedImage = await sharp(imageBuffer)
             .resize({
               width: null,
@@ -77,7 +76,6 @@ exports.enhanceImage = onRequest(async (request, response) => {
             enhancedImage.length,
         );
 
-        // Wysłanie przetworzonego obrazu
         response.set("Content-Type", "image/png");
         response.set("Access-Control-Allow-Origin", "*");
         response.send(enhancedImage);
@@ -98,37 +96,59 @@ exports.enhanceImage = onRequest(async (request, response) => {
  * @param {string} text - Tekst znaku wodnego
  * @param {number} width - Szerokość obrazu
  * @param {number} height - Wysokość obrazu
- * @param {number} fontSize - Rozmiar czcionki (domyślnie 30)
- * @returns {cv.Mat} - Obraz z tekstowym znakiem wodnym
+ * @param {Object} options - Opcje konfiguracyjne
+ * @param {number} options.fontSize - Rozmiar czcionki (domyślnie 30)
+ * @param {number} options.opacity - Przezroczystość (0-1, domyślnie 0.3)
+ * @param {string} options.fontColor - Kolor tekstu w formacie "R,G,B" (domyślnie "255,255,255")
+ * @param {number} options.angle - Kąt obrotu tekstu w stopniach (domyślnie -45)
+ * @param {number} options.fontStyle - Styl czcionki (cv.FONT_*)
+ * @return {cv.Mat} Obraz z tekstowym znakiem wodnym
  */
-const generateTextWatermark = (text, width, height, fontSize = 30) => {
+const generateTextWatermark = (text, width, height, options = {}) => {
+  const {
+    fontSize = 30,
+    opacity = 0.3,
+    fontColor = "255,255,255",
+    angle = -45,
+    fontStyle = cv.FONT_HERSHEY_SIMPLEX,
+  } = options;
+
   // Utworzenie przezroczystego obrazu
   const img = new cv.Mat(height, width, cv.CV_8UC4, [0, 0, 0, 0]);
-  const font = cv.FONT_HERSHEY_SIMPLEX;
+
+  // Parsowanie koloru
+  const [r, g, b] = fontColor.split(",").map(Number);
+  const alpha = Math.round(opacity * 255);
+  const color = new cv.Vec4(r, g, b, alpha);
+
   const fontScale = fontSize / 30;
   const thickness = Math.max(1, Math.floor(fontScale * 2));
-  const color = new cv.Vec4(255, 255, 255, 128); // Biały kolor z 50% przezroczystością
-    
+
   // Obliczenie rozmiaru tekstu dla odpowiedniego rozmieszczenia
-  const textSize = cv.getTextSize(text, font, fontScale, thickness);
+  const textSize = cv.getTextSize(text, fontStyle, fontScale, thickness);
   const textWidth = textSize.width;
   const textHeight = textSize.height;
-    
-  // Konfiguracja obrotu o 45 stopni
-  const angle = -45;
-  const center = new cv.Point2(width/2, height/2);
-  const M = cv.getRotationMatrix2D(center, angle, 1.0);
-    
-  // Narysowanie tekstu w siatce
-  for (let y = -height; y < height*2; y += textHeight * 4) {
-    for (let x = -width; x < width*2; x += textWidth * 4) {
+
+  // Obliczenie optymalnego odstępu między tekstami
+  const spacing = Math.max(textWidth, textHeight) * 2;
+
+  // Narysowanie tekstu w siatce z odpowiednim odstępem
+  for (let y = -height; y < height*2; y += spacing) {
+    for (let x = -width; x < width*2; x += spacing) {
       const point = new cv.Point2(x, y);
-      img.putText(text, point, font, fontScale, color, thickness, cv.LINE_AA);
+      img.putText(text, point, fontStyle, fontScale, color, thickness, cv.LINE_AA);
     }
   }
-    
+
   // Obrót całego obrazu
-  return img.warpAffine(M, new cv.Size(width, height));
+  const center = new cv.Point2(width/2, height/2);
+  const M = cv.getRotationMatrix2D(center, angle, 1.0);
+  const rotated = img.warpAffine(M, new cv.Size(width, height));
+
+  // Dodanie efektu rozmycia dla lepszego wyglądu
+  const blurred = rotated.gaussianBlur(new cv.Size(3, 3), 0.5);
+
+  return blurred;
 };
 
 /**
@@ -136,35 +156,35 @@ const generateTextWatermark = (text, width, height, fontSize = 30) => {
  * Wykorzystuje transformatę DCT do ukrycia danych w obrazie
  * @param {cv.Mat} img - Obraz wejściowy
  * @param {string} watermarkData - Dane do ukrycia w obrazie
- * @returns {cv.Mat} - Obraz z ukrytym znakiem wodnym
+ * @return {cv.Mat} Obraz z ukrytym znakiem wodnym
  */
 const addInvisibleWatermark = (img, watermarkData) => {
   // Konwersja do skali szarości i formatu float32 dla DCT
   const gray = img.cvtColor(cv.COLOR_BGR2GRAY);
   const float32 = gray.convertTo(cv.CV_32F);
-    
+
   // Transformata DCT
   const dct = float32.dct();
-    
+
   // Zakodowanie watermarku w średnich częstotliwościach
   const middleFreq = Math.floor(dct.rows / 4);
   const watermarkBits = Buffer.from(watermarkData).toString("binary")
       .split("")
       .map((char) => char.charCodeAt(0).toString(2).padStart(8, "0"))
       .join("");
-    
+
   // Osadzenie bitów watermarku
   for (let i = 0; i < watermarkBits.length; i++) {
     const row = middleFreq + Math.floor(i / dct.cols);
     const col = middleFreq + (i % dct.cols);
-        
+
     if (row < dct.rows - middleFreq && col < dct.cols - middleFreq) {
       const bit = parseInt(watermarkBits[i]);
       const value = dct.at(row, col);
       dct.set(row, col, value + (bit ? 0.1 : -0.1));
     }
   }
-    
+
   // Odwrotna transformata DCT i konwersja do formatu 8-bitowego
   return dct.idct().convertTo(cv.CV_8U);
 };
@@ -175,158 +195,229 @@ const addInvisibleWatermark = (img, watermarkData) => {
  */
 exports.processWatermark = onObjectFinalized(async (event) => {
   const filePath = event.data.name;
-    
+  const bucket = admin.storage().bucket();
+  const maxRetries = 3;
+
   // Sprawdzenie czy plik jest w odpowiednim folderze
-  if (!filePath.includes("/originals/")) {
-    logger.info("Plik nie jest w folderze originals, pomijam:", filePath);
+  if (!filePath.includes("/photo-original/")) {
+    logger.info("Plik nie jest w folderze photo-original, pomijam:", filePath);
     return;
   }
 
+  // Wyciągnięcie ID albumu z ścieżki
   const pathParts = filePath.split("/");
   const albumId = pathParts[1];
   const fileName = pathParts[pathParts.length - 1];
 
-  try {
-    logger.info(`Rozpoczynam przetwarzanie watermarku dla zdjęcia: ${fileName} w albumie: ${albumId}`);
-
-    // Pobranie ustawień znaku wodnego z Firestore
-    const albumDoc = await admin.firestore()
-        .collection("albums")
-        .doc(albumId)
-        .get();
-
-    if (!albumDoc.exists) {
-      logger.error(`Album ${albumId} nie istnieje`);
-      return;
-    }
-
-    const watermarkSettings = albumDoc.data().watermarkSettings;
-    if (!watermarkSettings?.enabled) {
-      logger.info("Watermark nie jest włączony dla tego albumu");
-      return;
-    }
-
-    // Pobranie oryginalnego zdjęcia do przetworzenia
-    const bucket = admin.storage().bucket();
-    const tempFilePath = path.join(os.tmpdir(), fileName);
-    await bucket.file(filePath).download({destination: tempFilePath});
-
-    // Wczytanie obrazu do OpenCV
-    let img = await cv.imread(tempFilePath);
-    let processedImg;
-
-    // Przetwarzanie w zależności od typu znaku wodnego
-    if (watermarkSettings.visibility === "visible") {
-      if (watermarkSettings.type === "text") {
-        // Dodanie tekstowego znaku wodnego
-        const watermark = generateTextWatermark(
-            watermarkSettings.text || "Copyright",
-            img.cols,
-            img.rows,
-        );
-        processedImg = img.addWeighted(watermark, 0.3, img, 1.0, 0);
-                
-      } else if (watermarkSettings.type === "image" && watermarkSettings.imageUrl) {
-        // Dodanie obrazkowego znaku wodnego
-        const watermarkTempPath = path.join(os.tmpdir(), "watermark_" + fileName);
-        await bucket.file(watermarkSettings.imageUrl)
-            .download({destination: watermarkTempPath});
-                
-        const watermarkImg = await cv.imread(watermarkTempPath);
-        const resized = watermarkImg.resize(
-            Math.floor(img.rows / 4),
-            Math.floor(img.cols / 4),
-        );
-                
-        // Dodanie znaku wodnego w rogach obrazu
-        const positions = [
-          {x: 20, y: 20},
-          {x: img.cols - resized.cols - 20, y: 20},
-          {x: 20, y: img.rows - resized.rows - 20},
-          {x: img.cols - resized.cols - 20, y: img.rows - resized.rows - 20},
-        ];
-                
-        processedImg = img.copy();
-        positions.forEach((pos) => {
-          const roi = processedImg.getRegion(
-              new cv.Rect(pos.x, pos.y, resized.cols, resized.rows),
-          );
-          resized.copyTo(roi);
-        });
-                
-        // Czyszczenie pliku tymczasowego
-        fs.unlinkSync(watermarkTempPath);
-      }
-    } else {
-      // Dodanie niewidocznego znaku wodnego
-      const watermarkData = `${albumId}_${Date.now()}_${fileName}`;
-      processedImg = addInvisibleWatermark(img, watermarkData);
-    }
-
-    // Zapisanie przetworzonego obrazu
-    const processedPath = path.join(os.tmpdir(), "processed_" + fileName);
-    await cv.imwrite(processedPath, processedImg);
-
-    // Upload przetworzonego obrazu do Storage
-    const watermarkedPath = filePath.replace("/originals/", "/watermarked/");
-    await bucket.upload(processedPath, {
-      destination: watermarkedPath,
-      metadata: {
-        contentType: event.data.contentType,
-        metadata: {
-          watermarked: "true",
-          watermarkType: watermarkSettings.visibility,
-          processedAt: Date.now(),
-        },
-      },
-    });
-
-    // Generowanie URL-i dla obu wersji obrazu
-    const [originalUrl] = await bucket.file(filePath).getSignedUrl({
-      action: "read",
-      expires: "03-01-2500",
-    });
-        
-    const [watermarkedUrl] = await bucket.file(watermarkedPath).getSignedUrl({
-      action: "read",
-      expires: "03-01-2500",
-    });
-
-    // Aktualizacja informacji w Firestore
-    await admin.firestore().collection("photos").add({
-      originalUrl,
-      watermarkedUrl,
-      albumId,
-      fileName,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      watermarkSettings: {
-        type: watermarkSettings.type,
-        visibility: watermarkSettings.visibility,
-      },
-    });
-
-    logger.info(`Pomyślnie przetworzono watermark dla ${fileName}`);
-
-  } catch (error) {
-    logger.error("Błąd podczas przetwarzania watermarku:", error);
-        
-    // Zapisanie informacji o błędzie w Firestore
-    await admin.firestore().collection("errors").add({
-      type: "watermark_processing",
-      albumId,
-      fileName,
-      error: error.message,
-      timestamp: admin.firestore.FieldValue.serverTimestamp(),
-    });
-  } finally {
-    // Czyszczenie plików tymczasowych
+  const processWithRetry = async (retryCount = 0) => {
     try {
-      fs.unlinkSync(path.join(os.tmpdir(), fileName));
-      fs.unlinkSync(path.join(os.tmpdir(), "processed_" + fileName));
+      logger.info(
+          "Rozpoczynam przetwarzanie watermarku dla zdjęcia: " +
+          `${fileName} w albumie: ${albumId} ` +
+          `(próba ${retryCount + 1}/${maxRetries})`,
+      );
+
+      // Aktualizacja statusu w Firestore
+      await admin.firestore().collection("albums").doc(albumId).update({
+        [`processingStatus.${fileName}`]: {
+          status: "processing",
+          attempt: retryCount + 1,
+          startedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+      });
+
+      // Pobranie ustawień albumu z Firestore
+      const albumDoc = await admin.firestore()
+          .collection("albums")
+          .doc(albumId)
+          .get();
+
+      if (!albumDoc.exists) {
+        throw new Error(`Album ${albumId} nie istnieje`);
+      }
+
+      const {watermarkSettings, folders} = albumDoc.data();
+      if (!watermarkSettings?.enabled) {
+        logger.info("Watermark nie jest włączony dla tego albumu");
+        return;
+      }
+
+      // Pobranie oryginalnego zdjęcia
+      const tempFilePath = path.join(os.tmpdir(), fileName);
+      await bucket.file(filePath).download({destination: tempFilePath});
+
+      // Wczytanie obrazu do OpenCV
+      const img = await cv.imread(tempFilePath);
+      let processedImg;
+
+      // Przetwarzanie w zależności od typu i widoczności watermarku
+      if (watermarkSettings.visibility === "visible") {
+        if (watermarkSettings.type === "text") {
+          // Dodanie tekstowego znaku wodnego
+          const watermarkOptions = {
+            fontSize: watermarkSettings.fontSize || 30,
+            opacity: watermarkSettings.opacity || 0.3,
+            fontColor: watermarkSettings.fontColor || "255,255,255",
+            angle: watermarkSettings.angle || -45,
+            fontStyle: watermarkSettings.fontStyle ?
+              cv[watermarkSettings.fontStyle] :
+              cv.FONT_HERSHEY_SIMPLEX,
+          };
+
+          const watermark = generateTextWatermark(
+              watermarkSettings.text || "Copyright",
+              img.cols,
+              img.rows,
+              watermarkOptions,
+          );
+          processedImg = img.addWeighted(watermark, 1.0, img, 1.0, 0);
+        } else if (watermarkSettings.type === "image") {
+          // Ścieżka do pliku watermarku
+          const watermarkPath = `${folders.watermarkImage}/${fileName}`;
+          const watermarkExists = await bucket.file(watermarkPath).exists();
+
+          if (!watermarkExists[0]) {
+            logger.error("Brak pliku watermarku");
+            throw new Error("Watermark image not found");
+          }
+
+          const watermarkTempPath = path.join(os.tmpdir(), "watermark_" + fileName);
+          await bucket.file(watermarkPath).download({destination: watermarkTempPath});
+
+          const watermarkImg = await cv.imread(watermarkTempPath);
+          const resized = watermarkImg.resize(
+              Math.floor(img.rows / 4),
+              Math.floor(img.cols / 4)
+          );
+
+          // Pozycjonowanie watermarku według ustawień
+          processedImg = img.copy();
+          if (watermarkSettings.position === "center") {
+            const x = Math.floor((img.cols - resized.cols) / 2);
+            const y = Math.floor((img.rows - resized.rows) / 2);
+            const roi = processedImg.getRegion(
+                new cv.Rect(x, y, resized.cols, resized.rows)
+            );
+            resized.copyTo(roi);
+          } else if (watermarkSettings.position === "corners") {
+            const positions = [
+              {x: 20, y: 20},
+              {x: img.cols - resized.cols - 20, y: 20},
+              {x: 20, y: img.rows - resized.rows - 20},
+              {x: img.cols - resized.cols - 20, y: img.rows - resized.rows - 20},
+            ];
+
+            positions.forEach((pos) => {
+              const roi = processedImg.getRegion(
+                  new cv.Rect(pos.x, pos.y, resized.cols, resized.rows)
+              );
+              resized.copyTo(roi);
+            });
+          } else { // tiled
+            for (let y = 0; y < img.rows; y += resized.rows * 2) {
+              for (let x = 0; x < img.cols; x += resized.cols * 2) {
+                const roi = processedImg.getRegion(
+                    new cv.Rect(x, y, resized.cols, resized.rows)
+                );
+                resized.copyTo(roi);
+              }
+            }
+          }
+
+          fs.unlinkSync(watermarkTempPath);
+        }
+      } else if (watermarkSettings.visibility === "invisible") {
+        // Dodanie niewidocznego znaku wodnego za pomocą DCT
+        const watermarkData = `${albumId}_${Date.now()}_${fileName}`;
+        processedImg = addInvisibleWatermark(img, watermarkData);
+      }
+
+      // Zapisanie przetworzonego obrazu
+      const processedPath = path.join(os.tmpdir(), "processed_" + fileName);
+      await cv.imwrite(processedPath, processedImg);
+
+      // Upload przetworzonego obrazu do Storage
+      const watermarkedPath = `${folders.watermarked}/${fileName}`;
+      await bucket.upload(processedPath, {
+        destination: watermarkedPath,
+        metadata: {
+          contentType: event.data.contentType,
+          metadata: {
+            watermarked: "true",
+            watermarkType: watermarkSettings.type,
+            watermarkVisibility: watermarkSettings.visibility,
+            processedAt: Date.now(),
+          },
+        },
+      });
+
+      // Generowanie URL-i
+      const [originalUrl] = await bucket.file(filePath).getSignedUrl({
+        action: "read",
+        expires: "03-01-2500",
+      });
+
+      const [watermarkedUrl] = await bucket.file(watermarkedPath).getSignedUrl({
+        action: "read",
+        expires: "03-01-2500",
+      });
+
+      // Aktualizacja informacji w Firestore
+      await admin.firestore().collection("photos").add({
+        originalUrl,
+        watermarkedUrl,
+        albumId,
+        fileName,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        watermarkSettings: {
+          type: watermarkSettings.type,
+          visibility: watermarkSettings.visibility,
+          position: watermarkSettings.position,
+        },
+      });
+
+      logger.info(`Pomyślnie przetworzono watermark dla ${fileName}`);
+
+      // Aktualizacja statusu na sukces
+      await admin.firestore().collection("albums").doc(albumId).update({
+        [`processingStatus.${fileName}`]: {
+          status: "completed",
+          completedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+      });
     } catch (error) {
-      logger.warn("Błąd podczas czyszczenia plików tymczasowych:", error);
+      logger.error(`Błąd podczas przetwarzania watermarku (próba ${retryCount + 1}/${maxRetries}):`, error);
+
+      // Aktualizacja statusu błędu
+      await admin.firestore().collection("albums").doc(albumId).update({
+        [`processingStatus.${fileName}`]: {
+          status: "error",
+          error: error.message,
+          attempt: retryCount + 1,
+          failedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+      });
+
+      // Zapisanie informacji o błędzie
+      await admin.firestore().collection("errors").add({
+        type: "watermark_processing",
+        albumId,
+        fileName,
+        error: error.message,
+        attempt: retryCount + 1,
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      // Ponów próbę jeśli nie przekroczono limitu
+      if (retryCount < maxRetries - 1) {
+        logger.info(`Ponawiam próbę za 5 sekund... (${retryCount + 2}/${maxRetries})`);
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        return processWithRetry(retryCount + 1);
+      }
     }
-  }
+  };
+
+  await processWithRetry();
 });
 
 /**
@@ -347,41 +438,36 @@ exports.processImage = onRequest(async (request, response) => {
 
       logger.info("Rozpoczynam przetwarzanie obrazu:", imageUrl);
 
-      // Pobranie obrazu
-      const imageResponse = await fetch(imageUrl);
+      const imageResponse = await nodeFetch(imageUrl);
       if (!imageResponse.ok) {
-        throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
+        throw new Error(
+            `Failed to fetch image: ${imageResponse.statusText}`,
+        );
       }
 
       const arrayBuffer = await imageResponse.arrayBuffer();
       const imageBuffer = Buffer.from(arrayBuffer);
 
-      // Konwersja obrazu do formatu tensora
       const imageTensor = tf.node.decodeImage(imageBuffer);
-
-      // Załadowanie modelu COCO-SSD
       const model = await cocoSsd.load();
-
-      // Detekcja obiektów na obrazie
       const predictions = await model.detect(imageTensor);
 
-      // Generowanie metadanych na podstawie wykrytych obiektów
       const detectedObjects = predictions.map((pred) => ({
         class: pred.class,
         score: pred.score,
       }));
 
-      // Pobranie oryginalnej ścieżki pliku z URL
-      const originalPath = decodeURIComponent(imageUrl.split("/o/")[1].split("?")[0]);
+      const originalPath = decodeURIComponent(
+          imageUrl.split("/o/")[1].split("?")[0],
+      );
       const fileName = path.basename(originalPath);
       const processedPath = `albums/${albumId}/photo-processed/${fileName}`;
-            
-      // Przetwarzanie obrazu za pomocą sharp
+
       const processedBuffer = await sharp(imageBuffer)
           .jpeg({
-            quality: 100, // Maksymalna jakość
-            chromaSubsampling: "4:4:4", // Najlepsza jakość kolorów
-            force: false, // Nie wymuszamy konwersji jeśli to nie potrzebne
+            quality: 100,
+            chromaSubsampling: "4:4:4",
+            force: false,
           })
           .sharpen({
             sigma: 1.2,
@@ -393,7 +479,6 @@ exports.processImage = onRequest(async (request, response) => {
           })
           .toBuffer();
 
-      // Upload przetworzonego obrazu do Firebase Storage
       const bucket = admin.storage().bucket();
       await bucket.file(processedPath).save(processedBuffer, {
         metadata: {
@@ -406,13 +491,11 @@ exports.processImage = onRequest(async (request, response) => {
         },
       });
 
-      // Generowanie URL dla przetworzonego obrazu
       const [processedUrl] = await bucket.file(processedPath).getSignedUrl({
         action: "read",
         expires: "03-01-2500",
       });
 
-      // Aktualizacja metadanych w Firestore
       const imageDoc = await admin.firestore()
           .collection("albums")
           .doc(albumId)
@@ -430,20 +513,126 @@ exports.processImage = onRequest(async (request, response) => {
         });
       }
 
-      // Czyszczenie pamięci
       tf.dispose(imageTensor);
 
       logger.info("Zakończono przetwarzanie AI dla obrazu:", imageUrl);
-            
+
       response.json({
         success: true,
         detectedObjects: detectedObjects,
         processedUrl: processedUrl,
       });
-
     } catch (error) {
       logger.error("Błąd podczas przetwarzania AI:", error);
       response.status(500).send(`Error processing image: ${error.message}`);
+    }
+  });
+});
+
+/**
+ * Funkcja do tworzenia struktury folderów albumu
+ */
+exports.createAlbumStructure = onRequest(async (request, response) => {
+  return cors(request, response, async () => {
+    try {
+      if (request.method !== "POST") {
+        return response.status(405).send("Method Not Allowed");
+      }
+
+      const {albumId, watermarkSettings} = request.body;
+
+      if (!albumId) {
+        return response.status(400).send("Missing albumId");
+      }
+
+      const bucket = admin.storage().bucket();
+      const basePath = `albums/${albumId}`;
+
+      // Zawsze tworzymy wszystkie podfoldery dla spójności
+      const folders = [
+        `${basePath}/photo-original`,
+        `${basePath}/photo-watermarked`,
+        `${basePath}/watermark-png`,
+      ];
+
+      // Tworzenie folderów w Storage
+      await Promise.all(folders.map(async (folder) => {
+        try {
+          await bucket.file(`${folder}/.keep`).save("");
+          logger.info(`Created folder: ${folder}`);
+        } catch (error) {
+          logger.error(`Error creating folder ${folder}:`, error);
+          throw error;
+        }
+      }));
+
+      // Aktualizacja dokumentu albumu w Firestore
+      await admin.firestore()
+          .collection("albums")
+          .doc(albumId)
+          .update({
+            folders: {
+              original: `${basePath}/photo-original`,
+              watermarked: `${basePath}/photo-watermarked`,
+              watermarkImage: `${basePath}/watermark-png`,
+            },
+            watermarkSettings: watermarkSettings || {
+              enabled: false,
+              type: "none",
+              visibility: "none",
+            },
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+
+      response.json({success: true, folders});
+    } catch (error) {
+      logger.error("Error creating album structure:", error);
+      response.status(500).send(`Error creating album structure: ${error.message}`);
+    }
+  });
+});
+
+// Dodanie nowej funkcji do ręcznego ponowienia przetwarzania
+exports.retryWatermarkProcessing = onRequest(async (request, response) => {
+  return cors(request, response, async () => {
+    try {
+      if (request.method !== "POST") {
+        return response.status(405).send("Method Not Allowed");
+      }
+
+      const {albumId, fileName} = request.body;
+      if (!albumId || !fileName) {
+        return response.status(400).send("Missing required parameters");
+      }
+
+      // Sprawdzenie czy plik istnieje
+      const filePath = `albums/${albumId}/photo-original/${fileName}`;
+      const [exists] = await admin.storage().bucket().file(filePath).exists();
+
+      if (!exists) {
+        return response.status(404).send("Original file not found");
+      }
+
+      // Resetowanie statusu przetwarzania
+      await admin.firestore().collection("albums").doc(albumId).update({
+        [`processingStatus.${fileName}`]: {
+          status: "pending",
+          queuedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+      });
+
+      // Emulacja eventu Storage
+      await exports.processWatermark({
+        data: {
+          name: filePath,
+          contentType: "image/jpeg",
+        },
+      });
+
+      response.json({success: true, message: "Watermark processing queued"});
+    } catch (error) {
+      logger.error("Error in retryWatermarkProcessing:", error);
+      response.status(500).send(error.message);
     }
   });
 });
