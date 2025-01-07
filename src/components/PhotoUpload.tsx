@@ -4,6 +4,7 @@ import { storage, db, auth } from '../firebaseConfig';
 import { updateDoc, doc, arrayUnion, getDoc } from 'firebase/firestore';
 import ProgressBar from './ProgressBar';
 import { getFunctions, httpsCallable } from 'firebase/functions';
+import app from '../firebaseConfig';
 
 interface PhotoUploadProps {
     albumId: string;
@@ -16,19 +17,65 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ albumId, hasWatermark, onUplo
     const [uploadMessage, setUploadMessage] = useState<string>('');
     const [isUploading, setIsUploading] = useState<boolean>(false);
 
-    const processWatermark = async (filePath: string) => {
+    const processWatermark = async (filePath: string, fileName: string) => {
         try {
+            console.log('Rozpoczynam proces watermarkowania:', { 
+                filePath, 
+                albumId,
+                fileName 
+            });
+            
             // Pobierz dane albumu
             const albumDoc = await getDoc(doc(db, 'albums', albumId));
             if (!albumDoc.exists()) {
+                console.error('Album nie istnieje:', albumId);
                 throw new Error('Album nie istnieje');
             }
             const albumData = albumDoc.data();
+            
+            // Sprawdź czy ścieżka zawiera /photo-original/
+            if (!filePath.includes('/photo-original/')) {
+                console.error('Nieprawidłowa ścieżka pliku:', filePath);
+                throw new Error('Invalid file path: File is not in photo-original folder');
+            }
 
+            console.log('Pobrane dane albumu:', {
+                albumId,
+                watermarkSettings: albumData.watermarkSettings,
+                hasWatermark: albumData.watermarkSettings?.enabled,
+                folders: albumData.folders,
+                hasWatermarkImage: !!albumData.folders?.watermarkImage
+            });
+
+            // Aktualizuj status w albumie na "processing"
+            await updateDoc(doc(db, 'albums', albumId), {
+                [`processingStatus.${fileName}`]: {
+                    status: 'processing',
+                    attempt: 1,
+                    startedAt: new Date().toISOString()
+                }
+            });
+
+            // Pobierz token uwierzytelniający
             const idToken = await auth.currentUser?.getIdToken();
             if (!idToken) {
+                console.error('Brak tokenu uwierzytelniającego');
                 throw new Error('Brak tokenu uwierzytelniającego');
             }
+
+            const requestData = {
+                filePath,
+                albumId,
+                watermarkSettings: albumData.watermarkSettings,
+                metadata: {
+                    authorId: auth.currentUser?.uid,
+                    authorEmail: auth.currentUser?.email,
+                    timestamp: new Date().toISOString(),
+                    fileName: fileName
+                }
+            };
+
+            console.log('Wywołuję funkcję processWatermarkHttp z parametrami:', requestData);
 
             // Wywołaj funkcję processWatermarkHttp przez REST API
             const response = await fetch('https://europe-central2-projekt-galeria-sypniewski-m.cloudfunctions.net/processWatermarkHttp', {
@@ -37,26 +84,73 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ albumId, hasWatermark, onUplo
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${idToken}`
                 },
-                body: JSON.stringify({
-                    filePath,
-                    albumId,
-                    watermarkSettings: albumData.watermarkSettings,
-                    metadata: {
-                        authorId: auth.currentUser?.uid,
-                        authorEmail: auth.currentUser?.email,
-                        timestamp: new Date().toISOString()
-                    }
-                })
+                body: JSON.stringify(requestData)
+            });
+
+            console.log('Otrzymano odpowiedź HTTP:', {
+                status: response.status,
+                statusText: response.statusText,
+                headers: Object.fromEntries(response.headers.entries())
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorText = await response.text();
+                console.error('Błąd HTTP:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    errorText
+                });
+
+                // Aktualizuj status błędu w albumie
+                await updateDoc(doc(db, 'albums', albumId), {
+                    [`processingStatus.${fileName}`]: {
+                        status: 'error',
+                        error: `HTTP error! status: ${response.status}`,
+                        errorDetails: errorText,
+                        failedAt: new Date().toISOString()
+                    }
+                });
+
+                throw new Error(`HTTP error! status: ${response.status}, details: ${errorText}`);
             }
 
             const result = await response.json();
+            console.log('Otrzymano odpowiedź z processWatermarkHttp:', result);
+
+            // Aktualizuj status na completed w albumie
+            if (result.success) {
+                await updateDoc(doc(db, 'albums', albumId), {
+                    [`processingStatus.${fileName}`]: {
+                        status: 'completed',
+                        completedAt: new Date().toISOString(),
+                        urls: result.data?.urls
+                    }
+                });
+            }
+
             return result;
         } catch (error) {
-            console.error('Błąd podczas przetwarzania watermarku:', error);
+            console.error('Błąd podczas przetwarzania watermarku:', {
+                error,
+                errorMessage: error instanceof Error ? error.message : 'Unknown error',
+                errorCode: error instanceof Error && 'code' in error ? (error as any).code : 'unknown_error',
+                errorStack: error instanceof Error ? error.stack : undefined
+            });
+
+            // Aktualizuj status błędu w albumie, jeśli nie został już zaktualizowany
+            try {
+                await updateDoc(doc(db, 'albums', albumId), {
+                    [`processingStatus.${fileName}`]: {
+                        status: 'error',
+                        error: error instanceof Error ? error.message : 'Unknown error',
+                        errorCode: error instanceof Error && 'code' in error ? (error as any).code : 'unknown_error',
+                        failedAt: new Date().toISOString()
+                    }
+                });
+            } catch (updateError) {
+                console.error('Błąd podczas aktualizacji statusu błędu:', updateError);
+            }
+
             throw error;
         }
     };
@@ -113,7 +207,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ albumId, hasWatermark, onUplo
                 if (hasWatermark) {
                     console.log('Album ma włączony watermark, rozpoczynam przetwarzanie');
                     try {
-                        const watermarkResult = await processWatermark(filePath);
+                        const watermarkResult = await processWatermark(filePath, fileName);
                         console.log('Watermark został przetworzony:', watermarkResult);
 
                         // Aktualizuj status przetwarzania w albumie

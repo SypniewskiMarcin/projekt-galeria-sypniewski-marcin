@@ -31,40 +31,158 @@ const AlbumView = ({ albumId, onBack, onStartEditing }) => {
     const [editedPhotos, setEditedPhotos] = useState(new Map()); // Przechowuje edytowane wersje
     const [downloadProgress, setDownloadProgress] = useState(0);
 
+    const checkAndFixAlbumStructure = async (albumData) => {
+        if (!albumData.folders?.original || !albumData.folders?.watermarked || !albumData.folders?.watermarkImage) {
+            console.log('Naprawiam strukturę folderów albumu:', {
+                albumId,
+                currentFolders: albumData.folders || {},
+                hasWatermark: albumData.watermarkSettings?.enabled
+            });
+            
+            try {
+                const updatedFolders = {
+                    original: `albums/${albumId}/photo-original`,
+                    watermarked: `albums/${albumId}/photo-watermarked`,
+                    watermarkImage: `albums/${albumId}/watermark-png`
+                };
+
+                await updateDoc(doc(db, 'albums', albumId), {
+                    folders: updatedFolders
+                });
+
+                console.log('Struktura folderów albumu została naprawiona:', updatedFolders);
+
+                // Pobierz zaktualizowane dane albumu
+                const albumRef = doc(db, 'albums', albumId);
+                const updatedAlbumDoc = await getDoc(albumRef);
+                if (!updatedAlbumDoc.exists()) {
+                    throw new Error('Album nie istnieje po aktualizacji');
+                }
+
+                const updatedAlbumData = updatedAlbumDoc.data();
+                console.log('Zaktualizowane dane albumu:', {
+                    folders: updatedAlbumData.folders,
+                    watermarkSettings: updatedAlbumData.watermarkSettings
+                });
+
+                return updatedAlbumData;
+            } catch (error) {
+                console.error('Błąd podczas naprawiania struktury folderów:', {
+                    error,
+                    albumId,
+                    currentFolders: albumData.folders || {}
+                });
+                throw error;
+            }
+        }
+        return albumData;
+    };
+
     useEffect(() => {
         const fetchAlbum = async () => {
             try {
                 setLoading(true);
+                console.log('Rozpoczynam pobieranie albumu:', albumId);
+
                 const albumRef = doc(db, 'albums', albumId);
                 const albumDoc = await getDoc(albumRef);
                 
                 if (albumDoc.exists()) {
-                    const albumData = { id: albumDoc.id, ...albumDoc.data() };
-                    setAlbum(albumData);
-                    
+                    let albumData = albumDoc.data();
+                    console.log('Pobrano dane albumu:', {
+                        hasWatermark: albumData.watermarkSettings?.enabled,
+                        folders: albumData.folders,
+                        watermarkSettings: albumData.watermarkSettings,
+                        author: albumData.author
+                    });
+
                     // Sprawdź czy zalogowany użytkownik jest autorem
                     const currentUser = auth.currentUser;
-                    setIsAuthor(currentUser && albumData.author.uid === currentUser.uid);
+                    const isUserAuthor = currentUser && albumData.author.uid === currentUser.uid;
+                    setIsAuthor(isUserAuthor);
+                    
+                    console.log('Status autora:', {
+                        isAuthor: isUserAuthor,
+                        currentUserId: currentUser?.uid,
+                        albumAuthorId: albumData.author.uid
+                    });
 
-                    // Pobierz zdjęcia po pobraniu albumu
-                    await fetchPhotos();
+                    // Sprawdź i napraw strukturę folderów
+                    albumData = await checkAndFixAlbumStructure(albumData);
+                    setAlbum(albumData);
+                    
+                    // Kontynuuj z pobieraniem zdjęć
+                    await fetchPhotos(albumData);
                 } else {
-                    setError('Album nie został znaleziony');
+                    console.error('Album nie istnieje:', albumId);
+                    setError('Album nie istnieje');
                 }
-            } catch (err) {
+            } catch (error) {
+                console.error('Błąd podczas pobierania albumu:', {
+                    error,
+                    albumId,
+                    errorMessage: error.message,
+                    errorStack: error.stack
+                });
                 setError('Wystąpił błąd podczas ładowania albumu');
-                console.error('Błąd:', err);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchAlbum();
+        if (albumId) {
+            fetchAlbum();
+        }
     }, [albumId]);
 
-    const fetchPhotos = async () => {
+    // Dodajemy efekt do monitorowania zmian w auth.currentUser
+    useEffect(() => {
+        const checkAuthorStatus = () => {
+            const currentUser = auth.currentUser;
+            if (currentUser && album) {
+                const isUserAuthor = album.author.uid === currentUser.uid;
+                setIsAuthor(isUserAuthor);
+                console.log('Aktualizacja statusu autora:', {
+                    isAuthor: isUserAuthor,
+                    currentUserId: currentUser.uid,
+                    albumAuthorId: album.author.uid
+                });
+            } else {
+                setIsAuthor(false);
+                console.log('Brak zalogowanego użytkownika lub danych albumu');
+            }
+        };
+
+        // Sprawdź status przy zmianie użytkownika lub albumu
+        checkAuthorStatus();
+
+        // Nasłuchuj na zmiany w auth
+        const unsubscribe = auth.onAuthStateChanged(() => {
+            checkAuthorStatus();
+        });
+
+        return () => unsubscribe();
+    }, [album]);
+
+    const fetchPhotos = async (albumData) => {
         try {
-            console.log('Pobieranie zdjęć dla albumu:', albumId);
+            console.log('Pobieranie zdjęć dla albumu:', {
+                albumId,
+                hasWatermark: albumData?.watermarkSettings?.enabled,
+                folders: albumData?.folders,
+                watermarkSettings: albumData?.watermarkSettings
+            });
+
+            // Sprawdź czy mamy prawidłową strukturę folderów
+            if (!albumData?.folders?.original || !albumData?.folders?.watermarked || !albumData?.folders?.watermarkImage) {
+                console.error('Brak wymaganych ścieżek folderów:', {
+                    original: albumData?.folders?.original,
+                    watermarked: albumData?.folders?.watermarked,
+                    watermarkImage: albumData?.folders?.watermarkImage
+                });
+                throw new Error('Nieprawidłowa struktura folderów albumu');
+            }
+
             const photosRef = collection(db, 'albums', albumId, 'photos');
             const photosSnapshot = await getDocs(photosRef);
             

@@ -292,8 +292,8 @@ exports.processWatermarkHttp = onRequest({
             if (watermarkSettings.type === "text") {
               logger.info("Rozpoczęcie przetwarzania tekstowego znaku wodnego:", {
                 text: watermarkSettings.text,
-                fontSize: Math.floor(metadata.height * 0.05),
-                opacity: watermarkSettings.opacity,
+                fontSize: Math.floor(metadata.height * 0.8),
+                opacity: watermarkSettings.opacity || 0.8,
                 isHidden: watermarkSettings.isHidden,
               });
 
@@ -302,9 +302,9 @@ exports.processWatermarkHttp = onRequest({
                 {
                   width: metadata.width,
                   height: metadata.height,
-                  fontSize: Math.floor(metadata.height * 0.05),
-                  opacity: watermarkSettings.opacity || 0.3,
-                  color: watermarkSettings.fontColor || "rgba(255,255,255,0.5)",
+                  fontSize: Math.floor(metadata.height * 0.8),
+                  opacity: watermarkSettings.opacity || 0.8,
+                  color: watermarkSettings.fontColor || "rgba(255,255,255,0.8)",
                   isHidden: watermarkSettings.isHidden || false,
                 },
               );
@@ -353,12 +353,12 @@ exports.processWatermarkHttp = onRequest({
 
               // Dostosuj rozmiar i przezroczystość watermarku
               const watermarkBuffer = await sharp(watermarkTempPath)
-                .resize(Math.floor(metadata.width * 0.15), null, {
+                .resize(Math.floor(metadata.width * 0.8), null, {
                   fit: "inside",
                   withoutEnlargement: true,
                 })
                 .composite([{
-                  input: Buffer.from([255, 255, 255, watermarkSettings.isHidden ? 13 : 77]),
+                  input: Buffer.from([255, 255, 255, watermarkSettings.isHidden ? 13 : 204]),
                   raw: {
                     width: 1,
                     height: 1,

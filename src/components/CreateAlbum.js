@@ -95,6 +95,15 @@ const CreateAlbum = forwardRef(({ user, onClose, onAlbumCreated }, ref) => {
                 }
             });
         }
+
+        // Aktualizacja dokumentu albumu o ścieżki folderów
+        await updateDoc(doc(db, 'albums', albumId), {
+            folders: {
+                original: `albums/${albumId}/photo-original`,
+                watermarked: `albums/${albumId}/photo-watermarked`,
+                watermarkImage: `albums/${albumId}/watermark-png`
+            }
+        });
     };
 
     const handleSubmit = async (e) => {
