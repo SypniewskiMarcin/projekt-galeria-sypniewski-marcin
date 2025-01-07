@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { db, storage, auth, functions } from '../firebaseConfig';
 import { doc, getDoc, updateDoc, arrayUnion, collection, getDocs, arrayRemove, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { httpsCallable } from 'firebase/functions';
 import ImageModal from './ImageModal';
 import Alert from './Alert';
 import ViewToggle from './ViewToggle';
@@ -165,22 +164,35 @@ const AlbumView = ({ albumId, onBack, onStartEditing }) => {
                     region: 'europe-central2'
                 });
                 try {
-                    // Upewnij się, że użytkownik jest zalogowany
+                    // Pobierz token uwierzytelniający
                     const idToken = await auth.currentUser.getIdToken();
-                    const processWatermarkFunction = httpsCallable(functions, 'processWatermark');
-                    const result = await processWatermarkFunction({
-                        filePath: storagePath,
-                        albumId: albumId,
-                        watermarkSettings: album.watermarkSettings,
-                        metadata: {
-                            authorId: auth.currentUser.uid,
-                            authorEmail: auth.currentUser.email,
-                            timestamp: new Date().toISOString(),
-                            fileName: fileName,
-                            idToken: idToken
-                        }
+                    
+                    // Wywołaj funkcję processWatermark przez REST API
+                    const response = await fetch('https://europe-central2-projekt-galeria-sypniewski-m.cloudfunctions.net/processWatermark', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${idToken}`
+                        },
+                        body: JSON.stringify({
+                            filePath: storagePath,
+                            albumId: albumId,
+                            watermarkSettings: album.watermarkSettings,
+                            metadata: {
+                                authorId: auth.currentUser.uid,
+                                authorEmail: auth.currentUser.email,
+                                timestamp: new Date().toISOString(),
+                                fileName: fileName
+                            }
+                        })
                     });
-                    console.log('Watermark processing result:', result.data);
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    console.log('Watermark processing result:', result);
 
                     // Aktualizuj status przetwarzania w albumie
                     await updateDoc(albumRef, {

@@ -7,7 +7,17 @@ const functions = require("firebase-functions");
 const logger = functions.logger;
 const sharp = require("sharp");
 const admin = require("firebase-admin");
-const cors = require("cors")({origin: true});
+const cors = require("cors")({
+  origin: [
+    "http://localhost:3000",
+    "https://sypniewskimarcin.github.io",
+    "https://projekt-galeria-sypniewski-m.web.app",
+    "https://projekt-galeria-sypniewski-m.firebaseapp.com",
+  ],
+  methods: ["POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
+});
 const nodeFetch = require("node-fetch");
 const path = require("path");
 const os = require("os");
@@ -74,28 +84,37 @@ async function generateTextWatermark(text, options) {
 /**
  * Funkcja do przetwarzania watermarku
  */
-exports.processWatermark = onRequest((request, response) => {
+exports.processWatermark = onRequest({
+  enforceAppCheck: false,
+  timeoutSeconds: 540,
+  memory: "2GB",
+  minInstances: 0,
+  maxInstances: 100,
+}, async (request, response) => {
   return cors(request, response, async () => {
     try {
+      if (request.method !== "POST") {
+        return response.status(405).send("Method Not Allowed");
+      }
+
       logger.info("Rozpoczęcie przetwarzania watermark - szczegóły requestu:", {
-        method: request.method,
         headers: request.headers,
         body: request.body,
-        path: request.path,
       });
 
-      if (request.method !== "POST") {
-        logger.warn("Błąd metody HTTP:", {
-          otrzymanaMetoda: request.method,
-          wymaganaMetoda: "POST",
-          headers: request.headers,
-        });
-        return response.status(405).json({
-          success: false,
-          error: "Method Not Allowed",
-          details: "Only POST method is allowed",
-          receivedMethod: request.method,
-        });
+      // Weryfikacja tokenu uwierzytelniającego
+      const authHeader = request.headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return response.status(401).send("Unauthorized - missing or invalid token");
+      }
+
+      const idToken = authHeader.split("Bearer ")[1];
+      let decodedToken;
+      try {
+        decodedToken = await admin.auth().verifyIdToken(idToken);
+      } catch (error) {
+        logger.error("Błąd weryfikacji tokenu:", error);
+        return response.status(401).send("Unauthorized - invalid token");
       }
 
       const {filePath, albumId, watermarkSettings, metadata} = request.body;
@@ -105,22 +124,16 @@ exports.processWatermark = onRequest((request, response) => {
         albumId,
         watermarkSettings,
         metadata,
-        requestHeaders: request.headers,
-        contentType: request.headers["content-type"],
+        uid: decodedToken.uid,
       });
 
       if (!filePath || !albumId) {
         logger.error("Brak wymaganych parametrów:", {
           filePath,
           albumId,
-          bodyContent: request.body,
+          body: request.body,
         });
-        return response.status(400).json({
-          success: false,
-          error: "Missing required parameters",
-          details: "filePath and albumId are required",
-          receivedParams: {filePath, albumId},
-        });
+        return response.status(400).send("Missing required parameters: filePath and albumId");
       }
 
       const bucket = admin.storage().bucket();
@@ -128,11 +141,7 @@ exports.processWatermark = onRequest((request, response) => {
 
       if (!filePath.includes("/photo-original/")) {
         logger.error("Nieprawidłowa ścieżka pliku:", filePath);
-        return response.status(400).json({
-          success: false,
-          error: "Invalid file path",
-          details: "File is not in photo-original folder",
-        });
+        throw new Error("Invalid file path: File is not in photo-original folder");
       }
 
       const pathParts = filePath.split("/");
@@ -383,11 +392,11 @@ exports.processWatermark = onRequest((request, response) => {
 
       const result = await processWithRetry();
       logger.info("Zwracam wynik przetwarzania watermarku:", result);
-      return response.status(200).json({
+      return {
         success: true,
         data: result,
         message: "Watermark processing completed successfully",
-      });
+      };
     } catch (error) {
       logger.error("Krytyczny błąd w processWatermark:", {
         errorMessage: error.message,
@@ -395,15 +404,8 @@ exports.processWatermark = onRequest((request, response) => {
         errorCode: error.code,
         errorDetails: error.details,
         requestBody: request.body,
-        requestHeaders: request.headers,
       });
-      return response.status(500).json({
-        success: false,
-        error: error.message || "Unknown error occurred",
-        code: error.code || "UNKNOWN_ERROR",
-        details: error.details || null,
-        stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
-      });
+      return response.status(500).send(error.message || "Unknown error occurred");
     }
   });
 });

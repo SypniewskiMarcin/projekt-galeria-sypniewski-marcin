@@ -3,7 +3,7 @@ import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
-import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
+import { getFunctions } from "firebase/functions";
 
 // Konfiguracja Firebase - skopiowana z Firebase Console
 const firebaseConfig = {
@@ -24,9 +24,7 @@ const storage = getStorage(app);
 const db = getFirestore(app);
 
 // Inicjalizacja Functions z prawidłową konfiguracją regionu
-const functions = getFunctions(app);
-functions.region = 'europe-central2';
-functions.customDomain = 'projekt-galeria-sypniewski-m.cloudfunctions.net';
+const functions = getFunctions(app, "europe-central2");
 
 // Eksportowanie funkcji
 export { auth, provider, storage, db, functions };
