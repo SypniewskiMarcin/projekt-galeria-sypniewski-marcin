@@ -1,8 +1,9 @@
 import React, { useState, useCallback } from 'react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage, db } from '../firebaseConfig';
-import { updateDoc, doc, arrayUnion } from 'firebase/firestore';
+import { storage, db, auth } from '../firebaseConfig';
+import { updateDoc, doc, arrayUnion, getDoc } from 'firebase/firestore';
 import ProgressBar from './ProgressBar';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 
 interface PhotoUploadProps {
     albumId: string;
@@ -14,6 +15,43 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ albumId, hasWatermark, onUplo
     const [uploadProgress, setUploadProgress] = useState<number>(0);
     const [uploadMessage, setUploadMessage] = useState<string>('');
     const [isUploading, setIsUploading] = useState<boolean>(false);
+
+    const processWatermark = async (filePath: string) => {
+        try {
+            console.log('Rozpoczynam przetwarzanie watermarku dla:', filePath);
+            
+            // Pobierz aktualne ustawienia watermarku z albumu
+            const albumDoc = await getDoc(doc(db, 'albums', albumId));
+            if (!albumDoc.exists()) {
+                throw new Error('Album nie istnieje');
+            }
+            const albumData = albumDoc.data();
+            
+            const functions = getFunctions();
+            const processWatermarkFunction = httpsCallable(functions, 'processWatermark');
+            
+            const idToken = await auth.currentUser?.getIdToken();
+            
+            const result = await processWatermarkFunction({ 
+                filePath,
+                albumId,
+                watermarkSettings: albumData.watermarkSettings,
+                metadata: {
+                    authorId: auth.currentUser?.uid,
+                    authorEmail: auth.currentUser?.email,
+                    timestamp: new Date().toISOString(),
+                    fileName: filePath.split('/').pop(),
+                    idToken
+                }
+            });
+
+            console.log('Watermark processing result:', result.data);
+            return result.data;
+        } catch (error) {
+            console.error('Error processing watermark:', error);
+            throw error;
+        }
+    };
 
     const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
@@ -28,8 +66,20 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ albumId, hasWatermark, onUplo
             let uploadedFiles = 0;
 
             for (const file of files) {
+                const timestamp = Date.now();
+                const safeFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+                const fileName = `${timestamp}_${safeFileName}`;
+                const filePath = `albums/${albumId}/photo-original/${fileName}`;
+
+                console.log('Rozpoczynam upload pliku:', {
+                    fileName,
+                    filePath,
+                    hasWatermark,
+                    albumId
+                });
+
                 // Upload do folderu photo-original
-                const originalRef = ref(storage, `albums/${albumId}/photo-original/${file.name}`);
+                const originalRef = ref(storage, filePath);
                 await uploadBytes(originalRef, file, {
                     customMetadata: {
                         originalName: file.name,
@@ -38,16 +88,49 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ albumId, hasWatermark, onUplo
                 });
 
                 const originalUrl = await getDownloadURL(originalRef);
+                console.log('Plik został przesłany, URL:', originalUrl);
 
                 // Aktualizacja dokumentu albumu
                 await updateDoc(doc(db, 'albums', albumId), {
                     photos: arrayUnion({
-                        name: file.name,
+                        name: fileName,
                         originalUrl,
                         uploadedAt: new Date().toISOString(),
                         processed: false
                     })
                 });
+                console.log('Zaktualizowano dokument albumu');
+
+                // Jeśli album ma włączony watermark, wywołaj processWatermark
+                if (hasWatermark) {
+                    console.log('Album ma włączony watermark, rozpoczynam przetwarzanie');
+                    try {
+                        const watermarkResult = await processWatermark(filePath);
+                        console.log('Watermark został przetworzony:', watermarkResult);
+
+                        // Aktualizuj status przetwarzania w albumie
+                        await updateDoc(doc(db, 'albums', albumId), {
+                            [`processingStatus.${fileName}`]: {
+                                status: 'completed',
+                                completedAt: new Date().toISOString()
+                            }
+                        });
+                    } catch (error) {
+                        console.error('Błąd podczas przetwarzania watermarku:', error);
+                        
+                        // Zapisz informację o błędzie w albumie
+                        await updateDoc(doc(db, 'albums', albumId), {
+                            [`processingStatus.${fileName}`]: {
+                                status: 'error',
+                                error: error.message,
+                                errorCode: error.code,
+                                failedAt: new Date().toISOString()
+                            }
+                        });
+                    }
+                } else {
+                    console.log('Album nie ma włączonego watermarku');
+                }
 
                 uploadedFiles++;
                 const progress = Math.round((uploadedFiles / totalFiles) * 100);
@@ -66,7 +149,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ albumId, hasWatermark, onUplo
             setUploadMessage('Wystąpił błąd podczas przesyłania.');
             setTimeout(() => setIsUploading(false), 3000);
         }
-    }, [albumId, onUploadComplete]);
+    }, [albumId, hasWatermark, onUploadComplete]);
 
     return (
         <div className="w-full">

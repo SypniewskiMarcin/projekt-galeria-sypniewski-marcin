@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { db, storage, auth } from '../firebaseConfig';
+import { db, storage, auth, functions } from '../firebaseConfig';
 import { doc, getDoc, updateDoc, arrayUnion, collection, getDocs, arrayRemove, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { httpsCallable } from 'firebase/functions';
 import ImageModal from './ImageModal';
 import Alert from './Alert';
 import ViewToggle from './ViewToggle';
@@ -140,7 +141,7 @@ const AlbumView = ({ albumId, onBack, onStartEditing }) => {
             console.log('Upload zakończony:', uploadTask);
             
             const photoUrl = await getDownloadURL(storageRef);
-            
+
             const photoData = {
                 id: `photo_${timestamp}`,
                 url: photoUrl,
@@ -154,6 +155,62 @@ const AlbumView = ({ albumId, onBack, onStartEditing }) => {
             await updateDoc(albumRef, {
                 photos: arrayUnion(photoData)
             });
+
+            // Sprawdź czy album ma włączony watermark
+            if (album.watermarkSettings?.enabled) {
+                console.log('Album ma włączony watermark, rozpoczynam przetwarzanie', {
+                    albumId,
+                    watermarkSettings: album.watermarkSettings,
+                    filePath: storagePath,
+                    region: 'europe-central2'
+                });
+                try {
+                    // Upewnij się, że użytkownik jest zalogowany
+                    const idToken = await auth.currentUser.getIdToken();
+                    const processWatermarkFunction = httpsCallable(functions, 'processWatermark');
+                    const result = await processWatermarkFunction({
+                        filePath: storagePath,
+                        albumId: albumId,
+                        watermarkSettings: album.watermarkSettings,
+                        metadata: {
+                            authorId: auth.currentUser.uid,
+                            authorEmail: auth.currentUser.email,
+                            timestamp: new Date().toISOString(),
+                            fileName: fileName,
+                            idToken: idToken
+                        }
+                    });
+                    console.log('Watermark processing result:', result.data);
+
+                    // Aktualizuj status przetwarzania w albumie
+                    await updateDoc(albumRef, {
+                        [`processingStatus.${fileName}`]: {
+                            status: 'completed',
+                            completedAt: new Date().toISOString()
+                        }
+                    });
+                } catch (error) {
+                    console.error('Błąd podczas przetwarzania watermarku:', error);
+                    console.error('Szczegóły błędu:', {
+                        code: error.code,
+                        message: error.message,
+                        details: error.details,
+                        stack: error.stack
+                    });
+
+                    // Zapisz informację o błędzie w albumie
+                    await updateDoc(albumRef, {
+                        [`processingStatus.${fileName}`]: {
+                            status: 'error',
+                            error: error.message,
+                            errorCode: error.code,
+                            failedAt: new Date().toISOString()
+                        }
+                    });
+                }
+            } else {
+                console.log('Album nie ma włączonego watermarku');
+            }
 
             // Odśwież dane albumu
             const updatedAlbumDoc = await getDoc(albumRef);

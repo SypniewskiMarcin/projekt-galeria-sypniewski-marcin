@@ -77,32 +77,79 @@ async function generateTextWatermark(text, options) {
 exports.processWatermark = onRequest((request, response) => {
   return cors(request, response, async () => {
     try {
+      logger.info("Rozpoczęcie przetwarzania watermark - szczegóły requestu:", {
+        method: request.method,
+        headers: request.headers,
+        body: request.body,
+        path: request.path,
+      });
+
       if (request.method !== "POST") {
-        return response.status(405).send("Method Not Allowed");
+        logger.warn("Błąd metody HTTP:", {
+          otrzymanaMetoda: request.method,
+          wymaganaMetoda: "POST",
+          headers: request.headers,
+        });
+        return response.status(405).json({
+          success: false,
+          error: "Method Not Allowed",
+          details: "Only POST method is allowed",
+          receivedMethod: request.method,
+        });
       }
 
-      const {filePath} = request.body;
-      if (!filePath) {
-        return response.status(400).send("No file path provided");
+      const {filePath, albumId, watermarkSettings, metadata} = request.body;
+
+      logger.info("Dane wejściowe po walidacji:", {
+        filePath,
+        albumId,
+        watermarkSettings,
+        metadata,
+        requestHeaders: request.headers,
+        contentType: request.headers["content-type"],
+      });
+
+      if (!filePath || !albumId) {
+        logger.error("Brak wymaganych parametrów:", {
+          filePath,
+          albumId,
+          bodyContent: request.body,
+        });
+        return response.status(400).json({
+          success: false,
+          error: "Missing required parameters",
+          details: "filePath and albumId are required",
+          receivedParams: {filePath, albumId},
+        });
       }
 
       const bucket = admin.storage().bucket();
       const maxRetries = 3;
 
       if (!filePath.includes("/photo-original/")) {
-        return response.status(400).send("File is not in photo-original folder");
+        logger.error("Nieprawidłowa ścieżka pliku:", filePath);
+        return response.status(400).json({
+          success: false,
+          error: "Invalid file path",
+          details: "File is not in photo-original folder",
+        });
       }
 
       const pathParts = filePath.split("/");
-      const albumId = pathParts[1];
       const fileName = pathParts[pathParts.length - 1];
+      logger.info("Rozpoczynam przetwarzanie pliku:", fileName);
 
       const processWithRetry = async (retryCount = 0) => {
         try {
-          const logMessage = `Rozpoczynam przetwarzanie watermarku dla zdjęcia: ${fileName} ` +
-            `w albumie: ${albumId} (próba ${retryCount + 1}/${maxRetries})`;
-          logger.info(logMessage);
+          logger.info("Rozpoczęcie próby przetwarzania watermarku:", {
+            fileName,
+            albumId,
+            retryCount,
+            maxRetries,
+            watermarkSettings,
+          });
 
+          // Aktualizacja statusu w Firestore
           await admin.firestore().collection("albums").doc(albumId).update({
             [`processingStatus.${fileName}`]: {
               status: "processing",
@@ -110,25 +157,67 @@ exports.processWatermark = onRequest((request, response) => {
               startedAt: admin.firestore.FieldValue.serverTimestamp(),
             },
           });
+          logger.info("Status w Firestore zaktualizowany pomyślnie");
 
+          // Pobieranie danych albumu
           const albumDoc = await admin.firestore().collection("albums").doc(albumId).get();
           if (!albumDoc.exists) {
-            throw new Error(`Album ${albumId} nie istnieje`);
+            const error = new Error(`Album ${albumId} nie istnieje`);
+            logger.error("Błąd pobierania albumu:", {
+              albumId,
+              error: error.message,
+            });
+            throw error;
           }
 
-          const {watermarkSettings, folders} = albumDoc.data();
-          if (!watermarkSettings?.enabled) {
-            logger.info("Watermark nie jest włączony dla tego albumu");
-            return;
+          const albumData = albumDoc.data();
+          logger.info("Pobrano dane albumu:", {
+            albumId,
+            watermarkEnabled: albumData.watermarkSettings?.enabled,
+            watermarkType: albumData.watermarkSettings?.type,
+            folders: albumData.folders,
+          });
+
+          if (!albumData.watermarkSettings?.enabled) {
+            logger.info("Watermark nie jest włączony dla tego albumu:", {
+              albumId,
+              watermarkSettings: albumData.watermarkSettings,
+            });
+            return {
+              success: true,
+              message: "Watermark is not enabled for this album",
+              status: "skipped",
+              albumId,
+            };
           }
 
           const tempFilePath = path.join(os.tmpdir(), fileName);
+          logger.info("Rozpoczęcie pobierania pliku:", {
+            filePath,
+            tempFilePath,
+            fileName,
+          });
+
           await bucket.file(filePath).download({destination: tempFilePath});
+          logger.info("Plik pobrany pomyślnie");
 
           let processedImage = sharp(tempFilePath);
           const metadata = await processedImage.metadata();
+          logger.info("Metadane obrazu:", {
+            width: metadata.width,
+            height: metadata.height,
+            format: metadata.format,
+            size: metadata.size,
+          });
 
           if (watermarkSettings.type === "text") {
+            logger.info("Rozpoczęcie przetwarzania tekstowego znaku wodnego:", {
+              text: watermarkSettings.text,
+              fontSize: Math.floor(metadata.height * 0.05),
+              opacity: watermarkSettings.opacity,
+              isHidden: watermarkSettings.isHidden,
+            });
+
             const watermarkSvg = await generateTextWatermark(
               watermarkSettings.text || "Copyright",
               {
@@ -147,25 +236,41 @@ exports.processWatermark = onRequest((request, response) => {
                 gravity: "center",
               },
             ]);
+
+            logger.info("Tekstowy znak wodny dodany pomyślnie");
           } else if (watermarkSettings.type === "image") {
-            // Pobierz listę plików z folderu watermark-png
+            logger.info("Rozpoczęcie przetwarzania obrazkowego znaku wodnego");
+
             const [files] = await bucket.getFiles({
-              prefix: `${folders.watermarkImage}/`,
+              prefix: `${albumData.folders.watermarkImage}/`,
+            });
+            logger.info("Znalezione pliki w folderze watermark:", {
+              filesCount: files.length,
+              filesNames: files.map((f) => f.name),
             });
 
-            // Znajdź pierwszy plik PNG (pomijając .keep)
             const watermarkFile = files.find((file) =>
               file.name.toLowerCase().endsWith(".png") &&
               !file.name.endsWith("/.keep"),
             );
 
             if (!watermarkFile) {
-              logger.error("Brak pliku watermarku w folderze");
-              throw new Error("Watermark image not found in folder");
+              const error = new Error("Watermark image not found in folder");
+              logger.error("Brak pliku watermarku:", {
+                searchPath: albumData.folders.watermarkImage,
+                foundFiles: files.map((f) => f.name),
+              });
+              throw error;
             }
+
+            logger.info("Znaleziono plik watermarku:", {
+              fileName: watermarkFile.name,
+              size: watermarkFile.size,
+            });
 
             const watermarkTempPath = path.join(os.tmpdir(), "watermark.png");
             await watermarkFile.download({destination: watermarkTempPath});
+            logger.info("Plik watermarku pobrany pomyślnie");
 
             // Dostosuj rozmiar i przezroczystość watermarku
             const watermarkBuffer = await sharp(watermarkTempPath)
@@ -196,7 +301,13 @@ exports.processWatermark = onRequest((request, response) => {
           }
 
           const processedBuffer = await processedImage.jpeg({quality: 100}).toBuffer();
-          const watermarkedPath = `${folders.watermarked}/${fileName}`;
+          logger.info("Obraz przetworzony pomyślnie");
+
+          const watermarkedPath = `${albumData.folders.watermarked}/${fileName}`;
+          logger.info("Rozpoczęcie zapisywania przetworzonego obrazu:", {
+            watermarkedPath,
+            originalPath: filePath,
+          });
 
           await bucket.file(watermarkedPath).save(processedBuffer, {
             metadata: {
@@ -210,7 +321,9 @@ exports.processWatermark = onRequest((request, response) => {
               },
             },
           });
+          logger.info("Przetworzony obraz zapisany pomyślnie");
 
+          logger.info("Generowanie URL-i dla obrazów");
           const [originalUrl] = await bucket.file(filePath).getSignedUrl({
             action: "read",
             expires: "03-01-2500",
@@ -220,7 +333,9 @@ exports.processWatermark = onRequest((request, response) => {
             action: "read",
             expires: "03-01-2500",
           });
+          logger.info("URL-e wygenerowane pomyślnie");
 
+          logger.info("Zapisywanie informacji o zdjęciu w Firestore");
           await admin.firestore().collection("photos").add({
             originalUrl,
             watermarkedUrl,
@@ -233,44 +348,62 @@ exports.processWatermark = onRequest((request, response) => {
               position: watermarkSettings.position,
             },
           });
+          logger.info("Informacje o zdjęciu zapisane pomyślnie w Firestore");
 
-          logger.info(`Pomyślnie przetworzono watermark dla ${fileName}`);
-
-          await admin.firestore().collection("albums").doc(albumId).update({
-            [`processingStatus.${fileName}`]: {
-              status: "completed",
-              completedAt: admin.firestore.FieldValue.serverTimestamp(),
-            },
+          logger.info("Przetwarzanie watermarku zakończone pomyślnie:", {
+            fileName,
+            albumId,
+            watermarkType: watermarkSettings.type,
           });
 
-          fs.unlinkSync(tempFilePath);
+          return {
+            success: true,
+            message: "Watermark processing completed",
+            fileName,
+            albumId,
+            status: "completed",
+            urls: {
+              original: originalUrl,
+              watermarked: watermarkedUrl,
+            },
+          };
         } catch (error) {
-          logger.error(`Błąd podczas przetwarzania watermarku (próba ${retryCount + 1}/${maxRetries}):`, error);
-
-          await admin.firestore().collection("albums").doc(albumId).update({
-            [`processingStatus.${fileName}`]: {
-              status: "error",
-              error: error.message,
-              attempt: retryCount + 1,
-              failedAt: admin.firestore.FieldValue.serverTimestamp(),
-            },
+          logger.error("Błąd w processWithRetry:", {
+            retryCount,
+            maxRetries,
+            errorMessage: error.message,
+            errorStack: error.stack,
+            errorCode: error.code,
+            fileName,
+            albumId,
           });
-
-          if (retryCount < maxRetries - 1) {
-            logger.info(`Ponawiam próbę za 5 sekund... (${retryCount + 2}/${maxRetries})`);
-            await new Promise((resolve) => setTimeout(resolve, 5000));
-            return processWithRetry(retryCount + 1);
-          } else {
-            throw error;
-          }
+          throw error;
         }
       };
 
-      await processWithRetry();
-      response.json({success: true, message: "Watermark processing completed"});
+      const result = await processWithRetry();
+      logger.info("Zwracam wynik przetwarzania watermarku:", result);
+      return response.status(200).json({
+        success: true,
+        data: result,
+        message: "Watermark processing completed successfully",
+      });
     } catch (error) {
-      logger.error("Error in watermark processing:", error);
-      response.status(500).send(error.message);
+      logger.error("Krytyczny błąd w processWatermark:", {
+        errorMessage: error.message,
+        errorStack: error.stack,
+        errorCode: error.code,
+        errorDetails: error.details,
+        requestBody: request.body,
+        requestHeaders: request.headers,
+      });
+      return response.status(500).json({
+        success: false,
+        error: error.message || "Unknown error occurred",
+        code: error.code || "UNKNOWN_ERROR",
+        details: error.details || null,
+        stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
+      });
     }
   });
 });
