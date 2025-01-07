@@ -167,8 +167,8 @@ const AlbumView = ({ albumId, onBack, onStartEditing }) => {
                     // Pobierz token uwierzytelniający
                     const idToken = await auth.currentUser.getIdToken();
                     
-                    // Wywołaj funkcję processWatermark przez REST API
-                    const response = await fetch('https://europe-central2-projekt-galeria-sypniewski-m.cloudfunctions.net/processWatermark', {
+                    // Wywołaj funkcję processWatermarkHttp przez REST API
+                    const response = await fetch('https://europe-central2-projekt-galeria-sypniewski-m.cloudfunctions.net/processWatermarkHttp', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -203,19 +203,74 @@ const AlbumView = ({ albumId, onBack, onStartEditing }) => {
                     });
                 } catch (error) {
                     console.error('Błąd podczas przetwarzania watermarku:', error);
-                    console.error('Szczegóły błędu:', {
-                        code: error.code,
-                        message: error.message,
-                        details: error.details,
-                        stack: error.stack
-                    });
+                    
+                    let errorDetails;
+                    if (error instanceof Error && error.message.includes('HTTP error')) {
+                        const statusMatch = error.message.match(/status: (\d+)/);
+                        const statusCode = statusMatch ? parseInt(statusMatch[1]) : 0;
+                        
+                        if (statusCode === 500) {
+                            errorDetails = {
+                                code: 'server_error',
+                                message: 'Internal server error occurred during watermark processing',
+                                details: error.message
+                            };
+                        } else {
+                            try {
+                                // Pobierz nowy token uwierzytelniający
+                                const newIdToken = await auth.currentUser.getIdToken();
+                                
+                                // Próba pobrania szczegółów błędu z odpowiedzi
+                                const response = await fetch('https://europe-central2-projekt-galeria-sypniewski-m.cloudfunctions.net/processWatermarkHttp', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${newIdToken}`
+                                    },
+                                    body: JSON.stringify({
+                                        filePath: storagePath,
+                                        albumId: albumId,
+                                        watermarkSettings: album.watermarkSettings,
+                                        metadata: {
+                                            authorId: auth.currentUser.uid,
+                                            authorEmail: auth.currentUser.email,
+                                            timestamp: new Date().toISOString(),
+                                            fileName: fileName
+                                        }
+                                    })
+                                });
+                                const errorResponse = await response.json();
+                                errorDetails = {
+                                    code: errorResponse.code || 'unknown_error',
+                                    message: errorResponse.message || error.message,
+                                    details: errorResponse.details,
+                                    path: errorResponse.path
+                                };
+                            } catch (e) {
+                                errorDetails = {
+                                    code: 'unknown_error',
+                                    message: error.message,
+                                    details: 'Failed to get error details'
+                                };
+                            }
+                        }
+                    } else {
+                        errorDetails = {
+                            code: error && typeof error === 'object' && 'code' in error ? error.code : 'unknown_error',
+                            message: error instanceof Error ? error.message : 'Unknown error',
+                            details: error && typeof error === 'object' && 'details' in error ? error.details : undefined
+                        };
+                    }
+
+                    console.error('Szczegóły błędu:', errorDetails);
 
                     // Zapisz informację o błędzie w albumie
                     await updateDoc(albumRef, {
                         [`processingStatus.${fileName}`]: {
                             status: 'error',
-                            error: error.message,
-                            errorCode: error.code,
+                            error: errorDetails.message,
+                            errorCode: errorDetails.code,
+                            errorDetails: errorDetails.details,
                             failedAt: new Date().toISOString()
                         }
                     });

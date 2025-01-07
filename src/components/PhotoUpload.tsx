@@ -18,37 +18,45 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ albumId, hasWatermark, onUplo
 
     const processWatermark = async (filePath: string) => {
         try {
-            console.log('Rozpoczynam przetwarzanie watermarku dla:', filePath);
-            
-            // Pobierz aktualne ustawienia watermarku z albumu
+            // Pobierz dane albumu
             const albumDoc = await getDoc(doc(db, 'albums', albumId));
             if (!albumDoc.exists()) {
                 throw new Error('Album nie istnieje');
             }
             const albumData = albumDoc.data();
-            
-            const functions = getFunctions();
-            const processWatermarkFunction = httpsCallable(functions, 'processWatermark');
-            
+
             const idToken = await auth.currentUser?.getIdToken();
-            
-            const result = await processWatermarkFunction({ 
-                filePath,
-                albumId,
-                watermarkSettings: albumData.watermarkSettings,
-                metadata: {
-                    authorId: auth.currentUser?.uid,
-                    authorEmail: auth.currentUser?.email,
-                    timestamp: new Date().toISOString(),
-                    fileName: filePath.split('/').pop(),
-                    idToken
-                }
+            if (!idToken) {
+                throw new Error('Brak tokenu uwierzytelniającego');
+            }
+
+            // Wywołaj funkcję processWatermarkHttp przez REST API
+            const response = await fetch('https://europe-central2-projekt-galeria-sypniewski-m.cloudfunctions.net/processWatermarkHttp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`
+                },
+                body: JSON.stringify({
+                    filePath,
+                    albumId,
+                    watermarkSettings: albumData.watermarkSettings,
+                    metadata: {
+                        authorId: auth.currentUser?.uid,
+                        authorEmail: auth.currentUser?.email,
+                        timestamp: new Date().toISOString()
+                    }
+                })
             });
 
-            console.log('Watermark processing result:', result.data);
-            return result.data;
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            return result;
         } catch (error) {
-            console.error('Error processing watermark:', error);
+            console.error('Błąd podczas przetwarzania watermarku:', error);
             throw error;
         }
     };
@@ -122,8 +130,8 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ albumId, hasWatermark, onUplo
                         await updateDoc(doc(db, 'albums', albumId), {
                             [`processingStatus.${fileName}`]: {
                                 status: 'error',
-                                error: error.message,
-                                errorCode: error.code,
+                                error: error instanceof Error ? error.message : 'Unknown error',
+                                errorCode: error instanceof Error && 'code' in error ? (error as any).code : 'unknown_error',
                                 failedAt: new Date().toISOString()
                             }
                         });
