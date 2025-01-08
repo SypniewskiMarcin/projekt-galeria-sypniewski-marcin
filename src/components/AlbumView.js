@@ -249,9 +249,89 @@ const AlbumView = ({ albumId, onBack, onStartEditing }) => {
                                         processingStatus: updatedProcessingStatus
                                     });
                                 } catch (error) {
-                                    // Jeśli plik nie istnieje, użyj oryginału
+                                    // Jeśli plik nie istnieje, użyj oryginału i spróbuj przetworzyć watermark
                                     photoPath = decodedPath;
                                     console.log('Brak wersji z watermarkiem, używam oryginału:', photoPath);
+
+                                    // Sprawdź status przetwarzania w bazie
+                                    const currentStatus = albumData.processingStatus?.[photoData.fileName];
+                                    console.log('Status przetwarzania watermark:', {
+                                        fileName: photoData.fileName,
+                                        currentStatus
+                                    });
+
+                                    // Jeśli nie ma statusu lub wystąpił błąd, spróbuj przetworzyć ponownie
+                                    if (!currentStatus || currentStatus.status === 'error') {
+                                        try {
+                                            console.log('Rozpoczynam ponowne przetwarzanie watermarku dla:', photoData.fileName);
+                                            
+                                            // Pobierz token uwierzytelniający
+                                            const idToken = await auth.currentUser.getIdToken();
+                                            
+                                            // Wywołaj funkcję processWatermarkHttp
+                                            const response = await fetch('https://europe-central2-projekt-galeria-sypniewski-m.cloudfunctions.net/processWatermarkHttp', {
+                                                method: 'POST',
+                                                headers: {
+                                                    'Content-Type': 'application/json',
+                                                    'Authorization': `Bearer ${idToken}`
+                                                },
+                                                body: JSON.stringify({
+                                                    filePath: photoPath,
+                                                    albumId: albumId,
+                                                    watermarkSettings: albumData.watermarkSettings,
+                                                    metadata: {
+                                                        authorId: auth.currentUser.uid,
+                                                        authorEmail: auth.currentUser.email,
+                                                        timestamp: new Date().toISOString(),
+                                                        fileName: photoData.fileName,
+                                                        retryAttempt: true
+                                                    }
+                                                })
+                                            });
+
+                                            if (!response.ok) {
+                                                throw new Error(`HTTP error! status: ${response.status}`);
+                                            }
+
+                                            const result = await response.json();
+                                            console.log('Ponowne przetwarzanie watermark - wynik:', result);
+
+                                            // Pobierz aktualny stan albumu
+                                            const albumRef = doc(db, 'albums', albumId);
+                                            const currentAlbumDoc = await getDoc(albumRef);
+                                            const currentAlbumData = currentAlbumDoc.data();
+
+                                            // Aktualizuj status w bazie
+                                            const updatedProcessingStatus = {
+                                                ...(currentAlbumData.processingStatus || {}),
+                                                [photoData.fileName]: {
+                                                    status: 'processing',
+                                                    startedAt: new Date().toISOString(),
+                                                    attempt: (currentStatus?.attempt || 0) + 1
+                                                }
+                                            };
+
+                                            await updateDoc(albumRef, {
+                                                processingStatus: updatedProcessingStatus
+                                            });
+
+                                            console.log('Status przetwarzania zaktualizowany:', {
+                                                fileName: photoData.fileName,
+                                                newStatus: updatedProcessingStatus[photoData.fileName]
+                                            });
+                                        } catch (retryError) {
+                                            console.error('Błąd podczas ponownego przetwarzania watermarku:', {
+                                                fileName: photoData.fileName,
+                                                error: retryError
+                                            });
+                                        }
+                                    } else if (currentStatus.status === 'processing') {
+                                        console.log('Watermark jest w trakcie przetwarzania:', {
+                                            fileName: photoData.fileName,
+                                            startedAt: currentStatus.startedAt,
+                                            attempt: currentStatus.attempt
+                                        });
+                                    }
                                 }
                             }
                         } else {

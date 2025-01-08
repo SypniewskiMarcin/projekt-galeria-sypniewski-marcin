@@ -31,9 +31,21 @@ admin.initializeApp();
 // Konfiguracja globalna dla funkcji v2
 setGlobalOptions({
   region: "europe-central2",
-  memory: "2GB",
+  memory: "512MB",
   timeoutSeconds: 540,
 });
+
+// Funkcja do monitorowania zużycia pamięci
+const logMemoryUsage = (label) => {
+  const used = process.memoryUsage();
+  logger.info(`Zużycie pamięci (${label}):`, {
+    rss: `${Math.round(used.rss / 1024 / 1024)}MB`, // Resident Set Size
+    heapTotal: `${Math.round(used.heapTotal / 1024 / 1024)}MB`, // Całkowity rozmiar sterty
+    heapUsed: `${Math.round(used.heapUsed / 1024 / 1024)}MB`, // Używana część sterty
+    external: `${Math.round(used.external / 1024 / 1024)}MB`, // Pamięć zewnętrzna (np. bufory)
+    arrayBuffers: `${Math.round(used.arrayBuffers / 1024 / 1024)}MB`, // Bufory tablic
+  });
+};
 
 /**
  * Generuje tekstowy znak wodny
@@ -87,12 +99,13 @@ async function generateTextWatermark(text, options) {
 exports.processWatermarkHttp = onRequest({
   enforceAppCheck: false,
   timeoutSeconds: 540,
-  memory: "2GB",
+  memory: "512MB",
   minInstances: 0,
   maxInstances: 100,
 }, async (request, response) => {
   return cors(request, response, async () => {
     try {
+      logMemoryUsage("Start przetwarzania");
       logger.info("1. Rozpoczęcie przetwarzania watermark - szczegóły requestu:", {
         headers: request.headers,
         body: request.body,
@@ -186,6 +199,7 @@ exports.processWatermarkHttp = onRequest({
 
       const processWithRetry = async (retryCount = 0) => {
         try {
+          logMemoryUsage(`Początek próby ${retryCount + 1}`);
           logger.info("9. Rozpoczęcie próby przetwarzania watermarku:", {
             fileName,
             albumId,
@@ -492,6 +506,8 @@ exports.processWatermarkHttp = onRequest({
         details: error.details || undefined,
         path: request.body?.filePath,
       });
+    } finally {
+      logMemoryUsage("Koniec przetwarzania");
     }
   });
 });
