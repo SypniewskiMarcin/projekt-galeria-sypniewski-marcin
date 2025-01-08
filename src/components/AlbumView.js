@@ -183,31 +183,134 @@ const AlbumView = ({ albumId, onBack, onStartEditing }) => {
                 throw new Error('Nieprawidłowa struktura folderów albumu');
             }
 
-            const photosRef = collection(db, 'albums', albumId, 'photos');
-            const photosSnapshot = await getDocs(photosRef);
+            // Pobierz zdjęcia z tablicy w dokumencie albumu
+            const photos = albumData.photos || [];
+            console.log('Znaleziono zdjęć w albumie:', {
+                count: photos.length,
+                photos: photos
+            });
             
-            console.log('Znaleziono zdjęć:', photosSnapshot.size);
-            
-            const photoPromises = photosSnapshot.docs.map(async (doc) => {
-                const photoData = doc.data();
+            const photoPromises = photos.map(async (photoData) => {
+                console.log('Przetwarzanie zdjęcia:', {
+                    fileName: photoData.fileName,
+                    url: photoData.url
+                });
+
+                let photoPath;
                 try {
-                    // Używamy Firebase Storage SDK zamiast fetch
-                    const imageRef = ref(storage, photoData.url);
+                    // Określ ścieżkę do zdjęcia w zależności od ustawień watermarku
+                    if (albumData.watermarkSettings?.enabled) {
+                        // Sprawdź czy zdjęcie zostało już przetworzone
+                        const processingStatus = albumData.processingStatus?.[photoData.fileName];
+                        console.log('Status przetwarzania watermark:', {
+                            fileName: photoData.fileName,
+                            status: processingStatus?.status,
+                            completedAt: processingStatus?.completedAt
+                        });
+
+                        // Wyciągnij względną ścieżkę z pełnego URL
+                        const urlParts = photoData.url.split('/o/')[1]?.split('?')[0];
+                        if (urlParts) {
+                            const decodedPath = decodeURIComponent(urlParts);
+                            const watermarkedPath = decodedPath.replace('/photo-original/', '/photo-watermarked/');
+
+                            // Najpierw sprawdź czy mamy status w bazie
+                            if (processingStatus?.status === 'completed') {
+                                photoPath = watermarkedPath;
+                                console.log('Używam wersji z watermarkiem (status z bazy):', {
+                                    originalPath: decodedPath,
+                                    watermarkedPath: photoPath
+                                });
+                            } else {
+                                // Jeśli nie ma statusu, spróbuj sprawdzić czy plik z watermarkiem istnieje
+                                try {
+                                    const watermarkedRef = ref(storage, watermarkedPath);
+                                    await getDownloadURL(watermarkedRef);
+                                    // Jeśli nie wystąpił błąd, plik istnieje
+                                    photoPath = watermarkedPath;
+                                    console.log('Używam wersji z watermarkiem (plik istnieje):', {
+                                        originalPath: decodedPath,
+                                        watermarkedPath: photoPath
+                                    });
+
+                                    // Zaktualizuj status w bazie
+                                    const albumRef = doc(db, 'albums', albumId);
+                                    const currentAlbumDoc = await getDoc(albumRef);
+                                    const currentAlbumData = currentAlbumDoc.data();
+                                    const updatedProcessingStatus = {
+                                        ...(currentAlbumData.processingStatus || {}),
+                                        [photoData.fileName]: {
+                                            status: 'completed',
+                                            completedAt: new Date().toISOString(),
+                                            watermarkedUrl: watermarkedPath
+                                        }
+                                    };
+                                    await updateDoc(albumRef, {
+                                        processingStatus: updatedProcessingStatus
+                                    });
+                                } catch (error) {
+                                    // Jeśli plik nie istnieje, użyj oryginału
+                                    photoPath = decodedPath;
+                                    console.log('Brak wersji z watermarkiem, używam oryginału:', photoPath);
+                                }
+                            }
+                        } else {
+                            photoPath = photoData.url;
+                            console.log('Nie udało się przetworzyć ścieżki, używam oryginału:', photoPath);
+                        }
+                    } else {
+                        // Jeśli watermark wyłączony, użyj oryginału
+                        photoPath = photoData.url.split('?')[0];
+                        console.log('Watermark wyłączony, używam oryginału:', photoPath);
+                    }
+
+                    // Użyj Firebase Storage SDK do pobrania URL
+                    const imageRef = ref(storage, photoPath);
                     const url = await getDownloadURL(imageRef);
+                    console.log('Pobrano URL zdjęcia:', {
+                        path: photoPath,
+                        url: url
+                    });
+
                     return {
-                        id: doc.id,
                         ...photoData,
-                        url // aktualizujemy URL
+                        url
                     };
                 } catch (error) {
-                    console.error(`Błąd podczas pobierania zdjęcia ${doc.id}:`, error);
+                    console.error(`Błąd podczas pobierania zdjęcia ${photoData.fileName}:`, {
+                        error,
+                        photoPath,
+                        originalUrl: photoData.url
+                    });
+                    // Jeśli nie udało się pobrać wersji z watermarkiem, spróbuj pobrać oryginał
+                    if (albumData.watermarkSettings?.enabled && photoPath?.includes('/photo-watermarked/')) {
+                        try {
+                            const originalPath = photoPath.replace('/photo-watermarked/', '/photo-original/');
+                            console.log('Próba pobrania oryginału:', originalPath);
+                            const originalRef = ref(storage, originalPath);
+                            const originalUrl = await getDownloadURL(originalRef);
+                            return {
+                                ...photoData,
+                                url: originalUrl
+                            };
+                        } catch (fallbackError) {
+                            console.error(`Błąd podczas pobierania oryginału zdjęcia ${photoData.fileName}:`, fallbackError);
+                            return null;
+                        }
+                    }
                     return null;
                 }
             });
 
-            const photos = (await Promise.all(photoPromises)).filter(photo => photo !== null);
-            console.log('Pomyślnie pobrano zdjęć:', photos.length);
-            setPhotos(photos);
+            const processedPhotos = (await Promise.all(photoPromises)).filter(photo => photo !== null);
+            console.log('Pomyślnie pobrano zdjęć:', {
+                count: processedPhotos.length,
+                photos: processedPhotos.map(p => ({
+                    url: p.url,
+                    fileName: p.fileName
+                }))
+            });
+            setPhotos(processedPhotos);
         } catch (error) {
             console.error('Szczegóły błędu podczas pobierania zdjęć:', {
                 code: error.code,
@@ -312,13 +415,34 @@ const AlbumView = ({ albumId, onBack, onStartEditing }) => {
                     const result = await response.json();
                     console.log('Watermark processing result:', result);
 
+                    // Pobierz aktualny stan albumu
+                    const currentAlbumDoc = await getDoc(albumRef);
+                    const currentAlbumData = currentAlbumDoc.data();
+                    
+                    // Przygotuj nowy obiekt processingStatus zachowując istniejące statusy
+                    const updatedProcessingStatus = {
+                        ...(currentAlbumData.processingStatus || {}),
+                        [fileName]: {
+                            status: 'completed',
+                            completedAt: new Date().toISOString(),
+                            watermarkedUrl: `albums/${albumId}/photo-watermarked/${fileName}`
+                        }
+                    };
+
                     // Aktualizuj status przetwarzania w albumie
                     await updateDoc(albumRef, {
-                        [`processingStatus.${fileName}`]: {
-                            status: 'completed',
-                            completedAt: new Date().toISOString()
-                        }
+                        processingStatus: updatedProcessingStatus
                     });
+
+                    // Odśwież dane albumu
+                    const updatedAlbumDoc = await getDoc(albumRef);
+                    const updatedAlbumData = updatedAlbumDoc.data();
+                    console.log('Zaktualizowany status przetwarzania:', {
+                        fileName,
+                        allStatuses: updatedAlbumData?.processingStatus,
+                        currentStatus: updatedAlbumData?.processingStatus?.[fileName]
+                    });
+                    setAlbum({ id: updatedAlbumDoc.id, ...updatedAlbumData });
                 } catch (error) {
                     console.error('Błąd podczas przetwarzania watermarku:', error);
                     
@@ -792,7 +916,7 @@ const AlbumView = ({ albumId, onBack, onStartEditing }) => {
                                     }}
                                     className="cancel-selection-button"
                                 >
-                                    ✕
+                                    ✕✕
                                 </button>
                             </>
                         )}
@@ -860,6 +984,7 @@ const AlbumView = ({ albumId, onBack, onStartEditing }) => {
                                 containerWidth={viewMode === 'square' ? 250 : undefined}
                                 naturalAspectRatio={viewMode === 'natural'}
                                 priority={index < 4}
+                                albumData={album}
                             />
                             {isSelectionMode && (
                                 <button

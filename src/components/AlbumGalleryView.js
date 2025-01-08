@@ -62,6 +62,7 @@ const AlbumGalleryView = () => {
                             src={photo.url}
                             alt={`Zdjęcie ${index + 1}`}
                             naturalAspectRatio={true}
+                            albumData={album}
                         />
                     </div>
                 ))}

@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { calculateOptimalDimensions, getOptimizedImageUrl, preloadImage } from '../utils/imageUtils';
+import { storage } from '../firebaseConfig';
+import { ref, getDownloadURL } from 'firebase/storage';
 import './OptimizedImage.css';
 
 const OptimizedImage = ({ 
@@ -10,23 +12,64 @@ const OptimizedImage = ({
     containerWidth,
     naturalAspectRatio = false,
     priority = false,
-    isThumb = true
+    isThumb = true,
+    albumData = null
 }) => {
     const [isLoaded, setIsLoaded] = useState(false);
     const [isFullImageLoaded, setIsFullImageLoaded] = useState(false);
     const [thumbnailLoaded, setThumbnailLoaded] = useState(false);
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+    const [finalImageUrl, setFinalImageUrl] = useState(src);
     const imageRef = useRef(null);
     const observerRef = useRef(null);
 
     useEffect(() => {
+        const checkAndLoadWatermarkedImage = async () => {
+            if (!albumData?.watermarkSettings?.enabled) {
+                setFinalImageUrl(src);
+                return;
+            }
+
+            try {
+                const urlParts = src.split('/o/')[1]?.split('?')[0];
+                if (!urlParts) {
+                    console.log('Nie udało się przetworzyć ścieżki, używam oryginału:', src);
+                    setFinalImageUrl(src);
+                    return;
+                }
+
+                const decodedPath = decodeURIComponent(urlParts);
+                const watermarkedPath = decodedPath.replace('/photo-original/', '/photo-watermarked/');
+
+                try {
+                    const watermarkedRef = ref(storage, watermarkedPath);
+                    const watermarkedUrl = await getDownloadURL(watermarkedRef);
+                    console.log('Używam wersji z watermarkiem:', {
+                        originalPath: decodedPath,
+                        watermarkedPath: watermarkedPath
+                    });
+                    setFinalImageUrl(watermarkedUrl);
+                } catch (error) {
+                    console.log('Brak wersji z watermarkiem, używam oryginału:', src);
+                    setFinalImageUrl(src);
+                }
+            } catch (error) {
+                console.error('Błąd podczas sprawdzania watermarku:', error);
+                setFinalImageUrl(src);
+            }
+        };
+
+        checkAndLoadWatermarkedImage();
+    }, [src, albumData]);
+
+    useEffect(() => {
         const calculateDimensions = () => {
             const img = new Image();
-            img.src = src;
+            img.src = finalImageUrl;
             img.onload = () => {
                 const aspectRatio = img.height / img.width;
-                const originalWidth = img.width * 0.4; // Kompresja do 40% oryginalnej szerokości
-                const originalHeight = img.height * 0.4; // Kompresja do 40% oryginalnej wysokości
+                const originalWidth = img.width * 0.4;
+                const originalHeight = img.height * 0.4;
 
                 setDimensions({
                     width: originalWidth,
@@ -40,11 +83,11 @@ const OptimizedImage = ({
         window.addEventListener('resize', calculateDimensions);
 
         return () => window.removeEventListener('resize', calculateDimensions);
-    }, [src]);
+    }, [finalImageUrl]);
 
     const thumbnailSrc = dimensions.width ? 
-        getOptimizedImageUrl(src, dimensions.width, isThumb, naturalAspectRatio) : 
-        src;
+        getOptimizedImageUrl(finalImageUrl, dimensions.width, isThumb, naturalAspectRatio) : 
+        finalImageUrl;
 
     return (
         <div 
@@ -70,7 +113,7 @@ const OptimizedImage = ({
             />
             {isFullImageLoaded && (
                 <img
-                    src={src}
+                    src={finalImageUrl}
                     alt={alt}
                     className="optimized-image full-image fade-in"
                     loading="lazy"
