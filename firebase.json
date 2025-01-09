@@ -16,7 +16,9 @@
       ],
       "predeploy": [
         "npm --prefix \"$RESOURCE_DIR\" run lint"
-      ]
+      ],
+      "memory": "2048MB",
+      "timeoutSeconds": 540
     }
   ],
   "hosting": {

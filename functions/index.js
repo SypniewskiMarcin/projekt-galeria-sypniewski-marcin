@@ -1,5 +1,15 @@
 /**
  * Import niezbędnych modułów i konfiguracja Firebase
+ * @module WatermarkProcessor
+ */
+
+/**
+ * Importy modułów zewnętrznych
+ * - firebase-functions/v2/https: do obsługi funkcji HTTP
+ * - firebase-functions/v2: do konfiguracji globalnej
+ * - sharp: do przetwarzania obrazów
+ * - cors: do obsługi Cross-Origin Resource Sharing
+ * - tensorflow: do przetwarzania AI
  */
 const {onRequest} = require("firebase-functions/v2/https");
 const {setGlobalOptions} = require("firebase-functions/v2");
@@ -7,6 +17,11 @@ const functions = require("firebase-functions");
 const logger = functions.logger;
 const sharp = require("sharp");
 const admin = require("firebase-admin");
+
+/**
+ * Konfiguracja CORS - określa dozwolone źródła, metody i nagłówki
+ * Zabezpiecza API przed nieautoryzowanym dostępem z innych domen
+ */
 const cors = require("cors")({
   origin: [
     "http://localhost:3000",
@@ -18,6 +33,10 @@ const cors = require("cors")({
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
 });
+
+/**
+ * Importy dodatkowych modułów do przetwarzania obrazów i obsługi systemu plików
+ */
 const nodeFetch = require("node-fetch");
 const path = require("path");
 const os = require("os");
@@ -28,44 +47,61 @@ const cocoSsd = require("@tensorflow-models/coco-ssd");
 // Inicjalizacja aplikacji Firebase Admin
 admin.initializeApp();
 
-// Konfiguracja globalna dla funkcji v2
+/**
+ * Konfiguracja globalna dla funkcji Firebase
+ * - region: europe-central2 (Warszawa)
+ * - memory: 2048MB (zoptymalizowane dla przetwarzania obrazów)
+ * - timeoutSeconds: 540 (9 minut, maksymalny czas na przetworzenie)
+ */
 setGlobalOptions({
   region: "europe-central2",
-  memory: "512MB",
+  memory: "2048MB",
   timeoutSeconds: 540,
 });
 
-// Funkcja do monitorowania zużycia pamięci
+/**
+ * Monitoruje zużycie pamięci w różnych punktach wykonania funkcji
+ * Pomaga w debugowaniu i optymalizacji wykorzystania pamięci
+ * @param {string} label - Etykieta punktu pomiaru
+ */
 const logMemoryUsage = (label) => {
   const used = process.memoryUsage();
   logger.info(`Zużycie pamięci (${label}):`, {
-    rss: `${Math.round(used.rss / 1024 / 1024)}MB`, // Resident Set Size
+    rss: `${Math.round(used.rss / 1024 / 1024)}MB`, // Całkowita pamięć zarezerwowana
     heapTotal: `${Math.round(used.heapTotal / 1024 / 1024)}MB`, // Całkowity rozmiar sterty
-    heapUsed: `${Math.round(used.heapUsed / 1024 / 1024)}MB`, // Używana część sterty
-    external: `${Math.round(used.external / 1024 / 1024)}MB`, // Pamięć zewnętrzna (np. bufory)
-    arrayBuffers: `${Math.round(used.arrayBuffers / 1024 / 1024)}MB`, // Bufory tablic
+    heapUsed: `${Math.round(used.heapUsed / 1024 / 1024)}MB`, // Aktualnie używana pamięć sterty
+    external: `${Math.round(used.external / 1024 / 1024)}MB`, // Pamięć zewnętrzna (C++ obiekty)
+    arrayBuffers: `${Math.round(used.arrayBuffers / 1024 / 1024)}MB`, // Pamięć buforów
   });
 };
 
 /**
- * Generuje tekstowy znak wodny
+ * Generuje tekstowy znak wodny jako SVG
+ * Pozwala na tworzenie przezroczystych, obrotowych znaków wodnych
  * @param {string} text - Tekst znaku wodnego
- * @param {Object} options - Opcje znaku wodnego
- * @return {Promise<Buffer>} Bufor z tekstowym znakiem wodnym
+ * @param {Object} options - Opcje konfiguracyjne znaku wodnego
+ * @param {number} options.width - Szerokość obrazu
+ * @param {number} options.height - Wysokość obrazu
+ * @param {number} [options.fontSize] - Rozmiar czcionki (domyślnie 5% wysokości)
+ * @param {number} [options.opacity] - Przezroczystość (0-1)
+ * @param {string} [options.color] - Kolor tekstu w formacie rgba
+ * @param {boolean} [options.isHidden] - Czy znak wodny ma być prawie niewidoczny
+ * @return {Promise<Buffer>} Bufor zawierający SVG znaku wodnego
  */
 async function generateTextWatermark(text, options) {
   const {
     width,
     height,
-    fontSize = Math.floor(height * 0.05), // 5% wysokości zdjęcia
+    fontSize = Math.floor(height * 0.05),
     opacity = 0.3,
     color = "rgba(255,255,255,0.5)",
     isHidden = false,
   } = options;
 
-  // Jeśli znak wodny ma być ukryty, używamy bardzo małej nieprzezroczystości
+  // Dostosowanie przezroczystości dla ukrytych znaków wodnych
   const finalOpacity = isHidden ? 0.05 : opacity;
 
+  // Generowanie SVG z obróconym tekstem
   const svg = `
     <svg width="${width}" height="${height}">
       <style>
@@ -94,12 +130,186 @@ async function generateTextWatermark(text, options) {
 }
 
 /**
+ * Przetwarza obraz w trybie strumieniowym, optymalizując zużycie pamięci
+ * Pozwala na przetwarzanie dużych plików bez przekraczania limitów pamięci
+ * @param {string} inputPath - Ścieżka do pliku wejściowego
+ * @param {Buffer} watermarkBuffer - Bufor ze znakiem wodnym (SVG lub PNG)
+ * @param {Object} options - Opcje przetwarzania
+ * @return {Promise<Buffer>} Przetworzony obraz jako bufor
+ */
+const processImageInChunks = async (inputPath, watermarkBuffer, options) => {
+    const startTime = Date.now();
+    logger.info("Rozpoczynam przetwarzanie obrazu w trybie strumieniowym:", {
+        inputPath,
+        hasWatermark: !!watermarkBuffer,
+        options,
+        startTime: new Date(startTime).toISOString(),
+    });
+    logMemoryUsage("Przed przetwarzaniem strumieniowym");
+
+    // Pobieranie metadanych obrazu
+    const {
+        width,
+        height,
+        format,
+        size: fileSize,
+        channels,
+        space,
+        depth,
+        density,
+        chromaSubsampling,
+        isProgressive,
+    } = await sharp(inputPath).metadata();
+
+    // Logowanie szczegółów obrazu dla celów diagnostycznych
+    logger.info("Szczegółowe metadane obrazu wejściowego:", {
+        width,
+        height,
+        format,
+        fileSize: fileSize ? `${Math.round(fileSize / 1024 / 1024)}MB` : "0MB",
+        channels,
+        space,
+        depth,
+        density,
+        chromaSubsampling,
+        isProgressive,
+        estimatedMemoryUsage: `${Math.round(width * height * (channels || 4) / 1024 / 1024)}MB`,
+    });
+
+    // Konfiguracja transformera Sharp z optymalizacją pamięci
+    const transformer = sharp({
+        failOnError: false,
+        limitInputPixels: Math.pow(2, 32) - 1,
+        sequentialRead: true,
+        animated: false,
+    })
+    .jpeg({
+        quality: 100,
+        mozjpeg: true,
+        chromaSubsampling: "4:4:4",
+        force: false,
+    });
+
+    // Dodawanie znaku wodnego jeśli jest dostępny
+    if (watermarkBuffer) {
+        logger.info("Konfiguracja watermarku:", {
+            watermarkSize: watermarkBuffer.length,
+            watermarkSizeMB: `${Math.round(watermarkBuffer.length / 1024 / 1024)}MB`,
+            options: options.watermarkSettings,
+        });
+
+        transformer.composite([{
+            input: watermarkBuffer,
+            gravity: "center",
+            blend: "over",
+            premultiplied: true,
+        }]);
+    }
+
+    // Logowanie konfiguracji transformera
+    logger.info("Transformer skonfigurowany z opcjami:", {
+        failOnError: false,
+        limitInputPixels: Math.pow(2, 32) - 1,
+        sequentialRead: true,
+        quality: 100,
+        mozjpeg: true,
+        chromaSubsampling: "4:4:4",
+    });
+    logMemoryUsage("Po konfiguracji transformera");
+
+    // Przetwarzanie strumieniowe z obsługą błędów
+    return new Promise((resolve, reject) => {
+        const chunks = [];
+        let processedSize = 0;
+        let chunkCount = 0;
+        const chunkSizes = [];
+        const chunkTimes = [];
+        const startProcessingTime = Date.now();
+
+        // Utworzenie strumienia odczytu z buforem 1MB
+        fs.createReadStream(inputPath, {
+            highWaterMark: 1024 * 1024, // Rozmiar chunka: 1MB
+        })
+        .on("error", (err) => {
+            logger.error("Błąd podczas odczytu strumienia:", {
+                error: err.message,
+                stack: err.stack,
+                processedSize: `${Math.round(processedSize / 1024 / 1024)}MB`,
+                chunksProcessed: chunkCount,
+            });
+            reject(err);
+        })
+        .pipe(transformer)
+        .on("error", (err) => {
+            logger.error("Błąd podczas transformacji:", {
+                error: err.message,
+                stack: err.stack,
+                processedSize: `${Math.round(processedSize / 1024 / 1024)}MB`,
+                chunksProcessed: chunkCount,
+            });
+            reject(err);
+        })
+        .on("data", (chunk) => {
+            // Przetwarzanie pojedynczego chunka
+            const chunkStartTime = Date.now();
+            processedSize += chunk.length;
+            chunks.push(chunk);
+            chunkCount++;
+            chunkSizes.push(chunk.length);
+
+            const chunkProcessingTime = Date.now() - chunkStartTime;
+            chunkTimes.push(chunkProcessingTime);
+
+            // Logowanie postępu przetwarzania
+            logger.info(`Przetworzono chunk ${chunkCount}:`, {
+                chunkSize: `${Math.round(chunk.length / 1024)}KB`,
+                totalProcessed: `${Math.round(processedSize / 1024 / 1024)}MB`,
+                chunkProcessingTime: `${chunkProcessingTime}ms`,
+                averageChunkSize: `${Math.round(chunkSizes.reduce((a, b) => a + b, 0) / chunkCount / 1024)}KB`,
+                averageProcessingTime: `${Math.round(chunkTimes.reduce((a, b) => a + b, 0) / chunkCount)}ms`,
+            });
+            logMemoryUsage(`Podczas przetwarzania chunka ${chunkCount}`);
+        })
+        .on("end", () => {
+            // Finalizacja przetwarzania
+            const endTime = Date.now();
+            const processingTime = endTime - startProcessingTime;
+            const totalTime = endTime - startTime;
+
+            // Łączenie chunków w końcowy bufor
+            let resultBuffer = Buffer.concat(chunks);
+            logger.info("Zakończono przetwarzanie strumieniowe:", {
+                finalSize: `${Math.round(resultBuffer.length / 1024 / 1024)}MB`,
+                originalSize: fileSize ? `${Math.round(fileSize / 1024 / 1024)}MB` : "0MB",
+                compressionRatio: fileSize ? `${(resultBuffer.length / fileSize * 100).toFixed(2)}%` : "100%",
+                chunksCount: chunkCount,
+                averageChunkSize: `${Math.round(processedSize / chunkCount / 1024)}KB`,
+                totalProcessingTime: `${processingTime}ms`,
+                totalTime: `${totalTime}ms`,
+                processingSpeed: fileSize ? `${(fileSize / 1024 / 1024 / (processingTime / 1000)).toFixed(2)}MB/s` : "0MB/s",
+                chunkStats: {
+                    minSize: `${Math.round(Math.min(...chunkSizes) / 1024)}KB`,
+                    maxSize: `${Math.round(Math.max(...chunkSizes) / 1024)}KB`,
+                    avgProcessingTime: `${Math.round(chunkTimes.reduce((a, b) => a + b, 0) / chunkCount)}ms`,
+                },
+            });
+            logMemoryUsage("Po zakończeniu przetwarzania");
+
+            // Czyszczenie pamięci i zwracanie wyniku
+            const result = resultBuffer;
+            resultBuffer = null;
+            resolve(result);
+        });
+    });
+};
+
+/**
  * Funkcja do przetwarzania watermarku
  */
 exports.processWatermarkHttp = onRequest({
   enforceAppCheck: false,
   timeoutSeconds: 540,
-  memory: "512MB",
+  memory: "2048MB",
   minInstances: 0,
   maxInstances: 100,
 }, async (request, response) => {
@@ -282,201 +492,142 @@ exports.processWatermarkHttp = onRequest({
             fileName,
           });
 
-          try {
-            await bucket.file(filePath).download({destination: tempFilePath});
-            logger.info("Plik pobrany pomyślnie");
+          await bucket.file(filePath).download({destination: tempFilePath});
+          logger.info("Plik pobrany pomyślnie");
+          logMemoryUsage("Po pobraniu pliku");
 
-            // Sprawdź czy plik istnieje i czy można go otworzyć
-            const stats = fs.statSync(tempFilePath);
-            logger.info("Informacje o pobranym pliku:", {
-              size: stats.size,
-              path: tempFilePath,
-              exists: fs.existsSync(tempFilePath),
-            });
+          const stats = fs.statSync(tempFilePath);
+          const fileSizeMB = stats.size / 1024 / 1024;
+          logger.info("Informacje o pobranym pliku:", {
+            size: `${fileSizeMB.toFixed(2)}MB`,
+            path: tempFilePath,
+            exists: fs.existsSync(tempFilePath),
+          });
 
-            let processedImage = sharp(tempFilePath);
-            const metadata = await processedImage.metadata();
-            logger.info("Metadane obrazu:", {
-              width: metadata.width,
-              height: metadata.height,
-              format: metadata.format,
-              size: metadata.size,
-            });
-
-            if (watermarkSettings.type === "text") {
-              logger.info("Rozpoczęcie przetwarzania tekstowego znaku wodnego:", {
-                text: watermarkSettings.text,
-                fontSize: Math.floor(metadata.height * 0.8),
-                opacity: watermarkSettings.opacity || 0.8,
-                isHidden: watermarkSettings.isHidden,
-              });
-
-              const watermarkSvg = await generateTextWatermark(
+          let watermarkBuffer = null;
+          if (watermarkSettings.type === "text") {
+            // Generujemy tekstowy znak wodny
+            const metadata = await sharp(tempFilePath).metadata();
+            watermarkBuffer = await generateTextWatermark(
                 watermarkSettings.text || "Copyright",
                 {
-                  width: metadata.width,
-                  height: metadata.height,
-                  fontSize: Math.floor(metadata.height * 0.8),
-                  opacity: watermarkSettings.opacity || 0.8,
-                  color: watermarkSettings.fontColor || "rgba(255,255,255,0.8)",
-                  isHidden: watermarkSettings.isHidden || false,
+                    width: metadata.width,
+                    height: metadata.height,
+                    fontSize: Math.floor(metadata.height * 0.05),
+                    opacity: watermarkSettings.opacity || 0.3,
+                    color: watermarkSettings.fontColor || "rgba(255,255,255,0.5)",
+                    isHidden: watermarkSettings.isHidden || false,
                 },
-              );
-
-              processedImage = processedImage.composite([
-                {
-                  input: watermarkSvg,
-                  gravity: "center",
-                },
-              ]);
-
-              logger.info("Tekstowy znak wodny dodany pomyślnie");
-            } else if (watermarkSettings.type === "image") {
-              logger.info("Rozpoczęcie przetwarzania obrazkowego znaku wodnego");
-
-              const [files] = await bucket.getFiles({
+            );
+          } else if (watermarkSettings.type === "image") {
+            // Pobieramy obrazkowy znak wodny
+            const [files] = await bucket.getFiles({
                 prefix: `${albumData.folders.watermarkImage}/`,
-              });
-              logger.info("Znalezione pliki w folderze watermark:", {
-                filesCount: files.length,
-                filesNames: files.map((f) => f.name),
-              });
-
-              const watermarkFile = files.find((file) =>
+            });
+            const watermarkFile = files.find((file) =>
                 file.name.toLowerCase().endsWith(".png") &&
                 !file.name.endsWith("/.keep"),
-              );
-
-              if (!watermarkFile) {
-                const error = new Error("Watermark image not found in folder");
-                logger.error("Brak pliku watermarku:", {
-                  searchPath: albumData.folders.watermarkImage,
-                  foundFiles: files.map((f) => f.name),
-                });
-                throw error;
-              }
-
-              logger.info("Znaleziono plik watermarku:", {
-                fileName: watermarkFile.name,
-                size: watermarkFile.size,
-              });
-
-              const watermarkTempPath = path.join(os.tmpdir(), "watermark.png");
-              await watermarkFile.download({destination: watermarkTempPath});
-              logger.info("Plik watermarku pobrany pomyślnie");
-
-              // Dostosuj rozmiar i przezroczystość watermarku
-              const watermarkBuffer = await sharp(watermarkTempPath)
-                .resize(Math.floor(metadata.width * 0.8), null, {
-                  fit: "inside",
-                  withoutEnlargement: true,
-                })
-                .composite([{
-                  input: Buffer.from([255, 255, 255, watermarkSettings.isHidden ? 13 : 204]),
-                  raw: {
-                    width: 1,
-                    height: 1,
-                    channels: 4,
-                  },
-                  tile: true,
-                  blend: "dest-in",
-                }])
-                .toBuffer();
-
-              processedImage = processedImage.composite([
-                {
-                  input: watermarkBuffer,
-                  gravity: "center",
-                },
-              ]);
-
-              fs.unlinkSync(watermarkTempPath);
+            );
+            if (watermarkFile) {
+                const watermarkTempPath = path.join(os.tmpdir(), "watermark.png");
+                await watermarkFile.download({destination: watermarkTempPath});
+                const originalMetadata = await sharp(tempFilePath).metadata();
+                watermarkBuffer = await sharp(watermarkTempPath)
+                    .resize(Math.floor(originalMetadata.width * 0.8), null, {
+                        fit: "inside",
+                        withoutEnlargement: true,
+                    })
+                    .toBuffer();
+                fs.unlinkSync(watermarkTempPath);
             }
+          }
 
-            const processedBuffer = await processedImage.jpeg({quality: 100}).toBuffer();
-            logger.info("Obraz przetworzony pomyślnie");
+          // Przetwarzamy obraz strumieniowo
+          let processedBuffer = await processImageInChunks(tempFilePath, watermarkBuffer, {
+              quality: 100,
+              watermarkSettings,
+          });
 
-            const watermarkedPath = `${albumData.folders.watermarked}/${fileName}`;
-            logger.info("Rozpoczęcie zapisywania przetworzonego obrazu:", {
-              watermarkedPath,
-              originalPath: filePath,
-            });
-
-            await bucket.file(watermarkedPath).save(processedBuffer, {
+          // Zapisujemy wynik
+          const watermarkedPath = `${albumData.folders.watermarked}/${fileName}`;
+          await bucket.file(watermarkedPath).save(processedBuffer, {
               metadata: {
-                contentType: "image/jpeg",
-                metadata: {
-                  watermarked: "true",
-                  watermarkType: watermarkSettings.type,
-                  watermarkVisibility: watermarkSettings.isHidden ? "hidden" : "visible",
-                  watermarkPosition: "center",
-                  processedAt: Date.now(),
-                },
+                  contentType: "image/jpeg",
+                  metadata: {
+                      watermarked: "true",
+                      watermarkType: watermarkSettings.type,
+                      watermarkVisibility: watermarkSettings.isHidden ? "hidden" : "visible",
+                      watermarkPosition: "center",
+                      processedAt: Date.now(),
+                      originalSize: `${fileSizeMB.toFixed(2)}MB`,
+                      processedSize: `${(processedBuffer.length / 1024 / 1024).toFixed(2)}MB`,
+                  },
               },
-            });
-            logger.info("Przetworzony obraz zapisany pomyślnie");
+          });
 
-            logger.info("Generowanie URL-i dla obrazów");
+          // Czyścimy zasoby
+          if (fs.existsSync(tempFilePath)) {
+              fs.unlinkSync(tempFilePath);
+          }
+          watermarkBuffer = null;
+          processedBuffer = null;
 
-            // Konstruujemy URL-e bezpośrednio
-            const originalUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(filePath)}?alt=media`;
-            const watermarkedUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(watermarkedPath)}?alt=media`;
+          if (global.gc) {
+              global.gc();
+          }
+          logMemoryUsage("Po wyczyszczeniu zasobów");
 
-            logger.info("URL-e wygenerowane pomyślnie");
+          logger.info("Generowanie URL-i dla obrazów");
 
-            logger.info("Zapisywanie informacji o zdjęciu w Firestore");
-            // Przygotuj obiekt watermarkSettings bez undefined
-            const watermarkSettingsToSave = {
+          // Konstruujemy URL-e bezpośrednio
+          const originalUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(filePath)}?alt=media`;
+          const watermarkedUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(watermarkedPath)}?alt=media`;
+
+          logger.info("URL-e wygenerowane pomyślnie");
+
+          logger.info("Zapisywanie informacji o zdjęciu w Firestore");
+          // Przygotuj obiekt watermarkSettings bez undefined
+          const watermarkSettingsToSave = {
                 type: watermarkSettings.type,
                 visibility: watermarkSettings.isHidden ? "hidden" : "visible",
-            };
-            // Dodaj position tylko jeśli jest zdefiniowane
-            if (watermarkSettings.position) {
+          };
+          // Dodaj position tylko jeśli jest zdefiniowane
+          if (watermarkSettings.position) {
                 watermarkSettingsToSave.position = watermarkSettings.position;
-            }
-            await admin.firestore().collection("photos").add({
+          }
+          await admin.firestore().collection("photos").add({
                 originalUrl,
                 watermarkedUrl,
                 albumId,
                 fileName,
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
                 watermarkSettings: watermarkSettingsToSave,
-            });
-            logger.info("Informacje o zdjęciu zapisane pomyślnie w Firestore");
+          });
+          logger.info("Informacje o zdjęciu zapisane pomyślnie w Firestore");
 
-            logger.info("Przetwarzanie watermarku zakończone pomyślnie:", {
-              fileName,
-              albumId,
-              watermarkType: watermarkSettings.type,
-            });
+          logger.info("Przetwarzanie watermarku zakończone pomyślnie:", {
+            fileName,
+            albumId,
+            watermarkType: watermarkSettings.type,
+          });
 
-            return {
-              success: true,
-              message: "Watermark processing completed",
-              fileName,
-              albumId,
-              status: "completed",
-              urls: {
-                original: originalUrl,
-                watermarked: watermarkedUrl,
-              },
-            };
-          } catch (error) {
-            logger.error("Błąd podczas przetwarzania:", {
-              error: error.message,
-              stack: error.stack,
-              tempFilePath,
-              filePath,
-            });
-            throw error;
-          }
+          return {
+            success: true,
+            message: "Watermark processing completed",
+            fileName,
+            albumId,
+            status: "completed",
+            urls: {
+              original: originalUrl,
+              watermarked: watermarkedUrl,
+            },
+          };
         } catch (error) {
           logger.error("Błąd w processWithRetry:", {
             retryCount,
             maxRetries,
             errorMessage: error.message,
             errorStack: error.stack,
-            errorCode: error.code,
             fileName,
             albumId,
           });
