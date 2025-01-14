@@ -1,0 +1,1055 @@
+% *************** Front matter ***************
+
+% ************************************************************
+% W tym miejscu mo¿esz zdefiniowaæ wygl¹d strony tytu³owej
+% Mo¿esz tak¿e zdefiniowaæ dedykacjê albo wy³¹czyæ j¹
+% ************************************************************
+
+% *************** Strona tytu³owa ***************
+\pagestyle{empty}
+\pagenumbering{arabic}
+
+
+
+
+\noindent
+%\hspace*{-3cm}
+%\vspace*{-4cm}\vspace*{-4cm}
+%\includegraphics[width=0.7\textwidth]{img/logo_2}
+%\begin{figure}[htb]
+
+	%\caption{}
+	%\label{fig:logo}
+%\end{figure}
+%\vspace*{1.5cm}
+
+
+
+
+\AddToShipoutPictureBG*{
+	\AtPageUpperLeft{\raisebox{-\height}{
+		\includegraphics[height=0.23\paperwidth]{img/logo_2}
+	}
+}}
+
+
+
+
+
+
+
+\vspace*{4cm}
+
+\begin{tabular}{l}
+ \HUGE PRACA DYPLOMOWA \\
+ \HUGE INŻYNIERSKA \\
+ \LARGE
+na kierunku Informatyka Stosowana  \\
+\end{tabular}
+
+\vfill
+
+
+	\begin{tabular}{p{15cm}}
+		\Large\bfseries
+		\textbf{Internetowa baza danych do zarządzania galeriami zdjęć z funkcją edycji zdjęć z wykorzystaniem algorytmów AI}\\
+		\\
+		\large\bfseries
+		\textbf{Online database for managing photo galleries with AI-based photo editing function}\\
+	\end{tabular}
+
+
+\vfill
+\begin{tabular}{l}
+\Large Marcin Sypniewski\\
+Numer albumu 116946\\
+\\
+\\
+Promotor dr inż. Piotr Grad \\
+\\
+    Bydgoszcz, styczeń 2025\\ %\today\\
+\end{tabular}
+
+\cleardoublepage
+
+% *************** Dedykacja ***************
+%\vspace*{\fill}
+%{\hfill\sffamily\itshape ...}
+%\cleardoublepage
+
+% *************** Spis treci ***************
+
+%\pagestyle{headings}
+%\addtocounter{page}{1}
+%\setcounter{page}{2}
+
+
+\pagestyle{plain}
+\scriptsize
+
+\section*{Metryka pracy dyplomowej}
+\subsubsection*{Dane ogólne}
+\begin{tabular}{p{3cm}p{12cm}}
+Nazwa Uczelni & Politechnika Bydgoska im. Jana i Jędrzeja Śniadeckich\\
+Wydział & Telekomunikacji, Informatyki i Elektrotechniki \\
+Kierunek & Informatyka Stosowana \\
+Tryb studiów & stacjonarne\\
+Dane autora & Marcin Sypniewski, 116946 \\
+Dane promotora & dr inż. Piotr Grad \\
+\end{tabular}
+
+\subsubsection*{Dane dotyczące pracy dyplomowej}
+\begin{tabular}{p{3cm}p{12cm}}
+Język pracy & język polski [PL]\\
+Tytuł pracy  & Internetowa baza danych do zarządzania galeriami zdjęć z funkcją edycji zdjęć z wykorzystaniem algorytmów AI\\
+Opis pracy & Projekt i implementacja wieloużytkownikowej aplikacji internetowej do zarządzania publicznymi i prywatnymi repozytoriami zdjęć z systemem komentarzy, ocen, przetwarzaniem obrazów opartym na funkcjach JavaScript i algorytmach AI oraz klasyfikacją albumów komercyjnych i publicznych.
+Aplikacja ma pozwalać na zarządzanie albumami, sortowanie i filtrowanie zdjęć według wybranych kryteriów oraz zapewniać podstawowe funkcje takie, jak edycja, dodawanie, usuwanie fotografii, a także zakup wybranych zdjęć lub albumów przez zalogowanych użytkowników aplikacji.
+Technologia AI zostanie w aplikacji użyta m.in. do zwiększania jakości zdjęć i próby dokonywania ich automatycznej klasyfikacji. Funkcje te będą oparte na rozwiązaniach open-source, przy użyciu gotowych modeli AI. Funkcje JavaScript natomiast zostaną wykorzystane do takich operacji na obrazach, jak: zmiana kontrastu, nasycenia, ekspozycji, stopnia rozmycia itd., co pozwoli użytkownikom na szybkie modyfikacje zdjęć bez konieczności korzystania z zewnętrznych narzędzi. Dodawane do galerii zdjęcia mogą być automatycznie oznaczane za pomocą widocznych lub ukrytych znaków wodnych, aby umożliwić zapewnienie egzekwowania praw autorskich w przypadku nieautoryzowanego powielania zdjęć. Projekt zakłada także implementację funkcji pozwalających na bezpieczne przechowywanie danych oraz zapewnienie przyjaznego interfejsu użytkownika.\\
+Typ pracy & inżynierska\\
+Streszczenie  & TTTTTekst streszczenia w języku polskim. Streszczenie pracy dyplomowej (max. pó³ strony) powinno zawierać omówienie zagadnień poruszanych w pracy. W części tej należy pokrótce scharakteryzować cel oraz podstawowe założenia pracy.\\
+Słowa kluczowe & komputer, JavaScript, React, Firebase, Internetowa baza danych, Sztuczna Inteligencja \\
+\end{tabular}
+
+
+%\subsubsection*{Egzamin dyplomowy}
+%\begin{tabular}{p{3cm}p{12cm}}
+%	Z³o¿y³ egzamin \newline dyplomowy w dniu &  ..................................................................................\\
+%	z wynikiem & ..................................................................................\\
+%	Ogólny wynik studiów &  ..................................................................................\\
+%	Dodatkowe wnioski \newline i uwagi Komisji &  ............................................................................................................................ ............................................................................................................................ ............................................................................................................................\\
+%\end{tabular}
+
+
+
+\newpage
+\section*{Diploma thesis record}
+\subsubsection*{General information}
+\begin{tabular}{p{3cm}p{12cm}}
+University name & Bydgoszcz University of Science and Technology\\
+Faculty &  Telecommunications, Computer  Science
+and Electrical Engineering\\
+Field of study & Applied Computer Science \\
+Mode of study & full-time \\
+Author's information & Marcin Sypniewski, 116946 \\
+Supervisor's information & dr inż. Piotr Grad \\
+\end{tabular}
+
+\subsubsection*{Data regarding the diploma thesis}
+\begin{tabular}{p{3cm}p{12cm}}
+Language of thesis & Polish [PL]/ English [EN] \\
+Title of thesis & Online database for managing photo galleries with AI-based photo editing function \\
+Description  & Design and implementation of a multi-user web application for managing public and private photo repositories with a commenting system, ratings, image processing based on JavaScript functions and AI algorithms, and classification of commercial and public albums.
+The application is to allow for managing albums, sorting and filtering photos according to selected criteria and providing basic functions such as editing, adding, deleting photos, as well as purchasing selected photos or albums by logged-in application users.
+AI technology will be used in the application, among others, to increase the quality of photos and attempt to automatically classify them. These functions will be based on open-source solutions, using ready-made AI models. JavaScript functions, on the other hand, will be used for such operations on images as: changing contrast, saturation, exposure, degree of blur, etc., which will allow users to quickly modify photos without having to use external tools. Photos added to the gallery can be automatically marked with visible or hidden watermarks to ensure copyright enforcement in the event of unauthorized duplication of photos. The project also involves implementing functions that allow for secure data storage and providing a user-friendly interface.\\
+Type of thesis & Engineer's \\
+Abstract & TTTTThe abstract should be written in English and provide a concise summary of the thesis (maximum half a page). It should briefly describe the purpose and basic assumptions of the thesis. \\
+Keywords & computer, JavaScript, React, Firebase, Internet Database, Artificial Intelligence \\
+\end{tabular}
+
+
+%\subsubsection*{Diploma exam}
+%\begin{tabular}{p{3cm}p{12cm}}
+%	He passed \newline the diploma examination on &  ..................................................................................\\
+%	with result & ..................................................................................\\
+%	Overall result of studies &  ..................................................................................\\
+%	Additional requests \newline and Commission comments &  ............................................................................................................................ ............................................................................................................................ ............................................................................................................................\\
+%\end{tabular}
+
+
+
+
+
+
+
+\normalsize
+%\includepdf[pages={1}]{karta_pracy.pdf}
+
+\clearpage
+
+
+\tableofcontents
+
+%\addtocounter{page}{1}
+% *************** Koniec front matter ***************
+
+
+% ********** Rozdzia³ 1 **********
+
+\chapter{Wstęp}
+\label{sec:chapter1}
+
+
+W obecnych czasach multimedia odgrywają ogromną rolę w przekazie informacji, a możliwość zarządzania tymi treściami jest niezbędnym narzędziem do dzielenia się nimi. Użytkownicy na całym świecie co raz częściej decydują się na przechowywanie zdjęć w chmurowych dyskach, zdalnych repozytoriach korzystając z różnych aplikacji. Wielu z nich używa zupełnie innych programów do edycji swoich fotografii, a wtedy zazwyczaj decydują się by finalnie udostępnić swoje pamiątki oraz wizje artystyczne gdzieś w internecie. Jednocześnie nieustanny rozwój technologii sprawia, że oczekiwania użytkowników w strefie edytowania obrazów i optymalizacji czasu, stają się co raz większe. Przy tym wszystkim każdy z nas chce używać rozwiązań, które oferują bezpieczne przechowywanie danych, a niektórzy myślą o komercjalizacji swoich prac.
+
+Na potrzebę pracy inżynierskiej powstał projekt aplikacji webowej, która połączyła w sobie wszystkie wymienione aspekty zarządzania zdjęciami.
+
+Powodem wyboru takiego tematu, było również pragnienie stworzenia intuicyjnego narzędzia dla znanej autorowi firmy świadczącej usługi fotograficzne, które dało sposobność usprawnienia pracy oraz poszerzenia oferty, zwiększając ilość źródeł dochodu. Dodatkowo praca inżynierska została przystosowana do spełnienia możliwości skalowania na większą ilość firm oraz osób prywatnych.
+
+\section{Cel pracy}
+\label{sec:1:chapter1}
+Celem pracy był projekt i implementacja internetowej bazy danych do zarządzania repozytoriami zdjęć, zapewniającą możliwość edycji obrazów za pomocą funkcji JavaScript oraz gotowych modeli Sztucznej Inteligencji na licencjach open-source. Opracowana aplikacja pozwoliła użytkownikom na wygodne wykonywanie wielu operacji w obrębie jednego, przyjaznego interfejsu - przy okazji umożliwiając skorzystanie z mechanizmu ochrony praw autorskich. Niniejsza praca zapewnia złożoną odpowiedź na aktualne potrzeby rynku związanego z przetwarzaniem treści wizualnych w formie cyfrowej, dostarczając nowatorskie narzędzia oparte na najpopularniejszych rozwiązaniach. W ramach tej pracy najbardziej czasochłonne było:
+
+\begin{itemize}
+    \item Zaprojektowanie logiki oraz estetycznego interfejsu użytkownika.
+    \item Zaimplementowanie funkcje edycji obrazów zawierającej dwa zupełnie odmienne sposoby działania.
+    \item Zaimplementowanie funcji automatycznego nanoszenia znaków wodnych na zdjęcia w wybranych albumach.
+    \item Zapewnienie bezpiecznego przechowywania prywatnych albumów oraz izolacji odpowiednich wersji zdjęć w albumach komercyjnych.
+\end{itemize}
+
+
+% ********** Koniec rozdzia³u **********
+
+
+% ********** Rozdział 2 **********
+\chapter{Teoria oraz analiza rynku i technologii}
+\label{sec:chapter2}
+
+\section{Podstawy teoretyczne}
+\label{sec:ą:chapter2}
+Autor w tym podrozdziale zawarł definicje oraz pojęcia objaśniające czym są poszczególne elementy, które złożyły się w pełen obraz rozwiązania tematu pracy inżynierskiej.
+
+\subsection{Internetowa baza danych}
+Internetowe bazy danych to nowoczesne rozwiązania umożliwiające przechowywanie i zarządzanie danymi przez przeglądarkę internetową. W przeciwieństwie do tradycyjnych systemów, które wymagają lokalnej instalacji, bazy te oferują dostęp z dowolnego urządzenia połączonego z internetem, zapewniając większą elastyczność i dostępność. Działają na architekturze klient-serwer, gdzie dane przechowywane są na serwerach w chmurze, co eliminuje konieczność utrzymywania lokalnej infrastruktury. Nowoczesne bazy, takie jak Firebase Cloud Firestore, automatycznie skalują zasoby w zależności od obciążenia, co pozwala na dynamiczne dostosowanie wydajności do liczby użytkowników. Dodatkowo, oferują zaawansowane mechanizmy bezpieczeństwa, takie jak szyfrowanie danych oraz kontrolę dostępu, co zapewnia prywatność i ochronę wrażliwych danych.
+
+
+\subsection{Przetwarzanie i edycja materiałów graficznych w środowisku webowym}
+Przetwarzanie i edycja obrazów cyfrowych to istotny element współczesnych systemów multimedialnych, umożliwiający modyfikację i optymalizację materiałów wizualnych. Proces ten obejmuje operacje matematyczne i algorytmiczne wykonywane na macierzy pikseli obrazu. Podstawowe operacje to korekta jasności, kontrastu czy nasycenia kolorów, a bardziej zaawansowane transformacje obejmują manipulację geometrią obrazu, nakładanie filtrów czy obróbkę kolorystyczną.
+
+W kontekście aplikacji internetowych, przetwarzanie obrazów znacznie ewoluowało wraz z rozwojem technologii webowych. Współczesne przeglądarki oferują zaawansowane API i biblioteki umożliwiające wykonywanie złożonych operacji edycyjnych bez konieczności instalacji dedykowanego oprogramowania na komputerze użytkownika. Wykorzystanie JavaScript i specjalistycznych bibliotek pozwala na implementację funkcji edycyjnych porównywalnych z aplikacjami desktopowymi, zachowując jednocześnie zalety dostępności i uniwersalności aplikacji webowych. Dodatkowo, wykorzystanie mocy obliczeniowej serwera do bardziej wymagających operacji w połączeniu z przetwarzaniem po stronie klienta tworzy elastyczne i wydajne środowisko do profesjonalnej obróbki materiałów wizualnych.
+
+\section{Analiza rynku}
+\label{sec:ą:chapter2}
+W tym miejscu zostały wymienione konkurencyjne rozwiązania, których poznanie stanowiło podstawę do analizy wzorców. Autor otrzymał w ten sposób określony kieurnek w jakim podążał przy kolejnych etapach pracy.
+
+\subsection{Google Photos}
+Aplikacja Google Photos jest usługą chmurową pozwalającą na przechowywanie multimediów takich jak zdjęcia, pliki wideo, zrzuty ekranów, a także na ich podstawową edycję. Obecnie aplikacja jest częścią domyślnego pakietu usług preinstalowanych na urządzeniach z systemem Android.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=0.7\textwidth]{img/googlePhotos-0}
+\caption{Widok przeglądu sekcji Photos na stronie internetowej Google Photos}
+\label{fig:1}
+\end{figure}
+
+Zalety:
+\begin{itemize}
+    \item Intuicyjny interfejs,
+    \item Integracja z innymi usługami Google,
+    \item Wsparcie AI w kategoryzowaniu zdjeć.
+\end{itemize}
+Wady
+\begin{itemize}
+    \item Brak wsparcia możliwości sprzedaży zdjęć i albumów.
+\end{itemize}
+
+\subsection{Adobe Lightroom}
+Adobe Lightroom - aplikacja do profesjonalnego zastosowania w obróbce i zarządzaniu zdjęć. Nazwa Lightroom stanowi przeciwieństwo nawiązujące do ciemni fotograficznej (ang. \textit{darkroom}) — wskazuje, że fotograf pracując nad wywoływaniem zdjęć, nie musi już przebywać w ciemnym pomieszczeniu, lecz może działać w dowolnych warunkach oświetleniowych. Oprogramowanie jest dostępne w wersjach na urządzenia mobilne oraz urządzenia stacjonarne.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=0.7\textwidth]{img/adobeLightroomClassic-0}
+\caption{Widok panelu wywoływania w aplikacji Adobe Lightroom Classic}
+\label{fig:2}
+\end{figure}
+
+Zalety:
+\begin{itemize}
+    \item Bardzo rozbudowanane możliwości edycji,
+    \item Synchronizacja plików oraz zmian na wielu urządzeniach,
+    \item Obsługa formatów RAW,
+    \item Natywne wersje dla wielu platform (Windows, macOS, Android, iOS).
+\end{itemize}
+Wady
+\begin{itemize}
+    \item Pełne wersje aplikacji są dostępne jedynie za opłatą - najczęściej w modelu subskrybcyjnym,
+    \item Brak możliwości sprzedaży,
+    \item Potencjalnie skomplikowany interfejs dla amatorów,
+    \item Pełne wersje.
+\end{itemize}
+
+
+\subsection{Flickr}
+Flickr to platforma społecznościowa, która udostępnia możliwości takie jak tworzenia i zarządzania albumami zdjęc, publikowania swoich prac, wchodzenia w interakcje z innymi użytkownikami. Główną grupą odbiorców są fotografowie.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=0.7\textwidth]{img/flickr-0.png}
+\caption{Widok panelu wywoływania w aplikacji Adobe Lightroom Classic}
+\label{fig:3}
+\end{figure}
+
+
+Zalety:
+\begin{itemize}
+    \item Fotograficzna społeczność,
+    \item Grupy tematyczne,
+    \item Różne opcje licencjonowania zdjęć.
+\end{itemize}
+Wady
+\begin{itemize}
+    \item Brak większych możliwości edycji,
+    \item Środowisko społeczne przeznaczone dla fotografów,
+    \item Brak wsparcia sprzedaży.
+\end{itemize}
+
+\subsection{500px}
+500px to rozwiązanie skupione na fotografach - posiada segment do publikowania swojego portfolio, sprzedaży zdjęć na zasadzie licencji oraz wyszukiwania fotografów dla klientów w oparciu o personalizowanie treści w części pod nazwą Discover.
+
+Zalety:
+\begin{itemize}
+    \item Wysoka jakość zdjęć,
+    \item Opcje licencjonowania zdjęć,
+    \item Różne opcje licencjonowania zdjęć,
+    \item Możliwość sprzedaży zdjęć na globalnym rynku.
+\end{itemize}
+Wady
+\begin{itemize}
+    \item Ograniczone możliwości edycji,
+    \item Wysokie prowizje podczas sprzedaży zdjęc.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{img/500px-0.png}
+\caption{Widok panelu personalizacji treści na stronie internetowej 500px}
+\label{fig:4}
+\end{figure}
+
+% \begin{figure}[htb]
+% \centering
+% \includegraphics[width=0.7\textwidth]{img/500px-1.png}
+% \caption{Widok panelu ze spersonalizowanymi wynikami na stronie internetowej 500px}
+% \label{fig:1}
+% \end{figure}
+
+
+
+\section{Dobór technologii i narzędzi}
+
+\subsection{Platforma Firebase jako rozwiązanie backendowe}
+
+Firebase stanowi kompleksową platformę rozwoju aplikacji, która w tym projekcie pełni rolę całego zaplecza backendowego. Kluczowym elementem Firebase jest Cloud Firestore - nierelacyjna baza danych, która przechowuje dane w formie dokumentów i kolekcji. Dokumenty te wykorzystują format zbliżony do JSON (JavaScript Object Notation), ale rozszerzony o dodatkowe typy danych specyficzne dla Firestore. Podczas gdy JSON obsługuje podstawowe typy danych jak stringi, liczby czy booleany, Firestore dodaje specjalne typy takie jak znaczniki czasu (Timestamps), referencje do innych dokumentów (DocumentReference) czy dane geograficzne (GeoPoint).
+Struktura ta jest szczególnie korzystna w kontekście aplikacji galerii zdjęć, gdzie mamy do czynienia z różnorodnymi typami danych, takimi jak informacje o albumach, zdjęciach czy komentarzach.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{img/jsonPrzykladowyFirebase.png}
+\caption{Przykładowa struktura danych w projekcie}
+\label{fig:5}
+\end{figure}
+
+Istotną zaletą Firebase jest automatyczne skalowanie infrastruktury w zależności od obciążenia aplikacji. System samodzielnie zarządza zasobami, co eliminuje konieczność ręcznej konfiguracji serwerów. W kontekście galerii zdjęć jest to szczególnie ważne, gdyż obciążenie może znacząco się zmieniać w zależności od liczby użytkowników przeglądających lub przesyłających zdjęcia.
+
+Firebase Authentication dostarcza gotowy system uwierzytelniania, który w projekcie wykorzystano do implementacji logowania przez konta Google. System ten automatycznie zarządza sesjami użytkowników i zapewnia bezpieczne przechowywanie danych uwierzytelniających. Taka struktura danych pozwala na efektywne zarządzanie relacjami między albumami, zdjęciami i użytkownikami, jednocześnie zachowując elastyczność charakterystyczną dla baz dokumentowych. W przeciwieństwie do tradycyjnego JSONa, Firestore automatycznie zarządza indeksowaniem danych i umożliwia złożone zapytania, zachowując przy tym wydajność przy dużej skali danych.
+
+\subsection{JavaScript jako główny język programowania}
+
+Projekt galerii fotograficznej został zrealizowany głównie w języku JavaScript, z wybranymi modułami zaimplementowanymi w TypeScript. JavaScript, jako fundamentalny język programowania dla przeglądarek internetowych, umożliwia tworzenie dynamicznych i interaktywnych aplikacji webowych bez konieczności przeładowywania strony. Ta cecha jest szczególnie istotna w kontekście aplikacji galerii, gdzie płynna interakcja z interfejsem użytkownika ma kluczowe znaczenie dla doświadczenia użytkownika.
+Analiza struktury projektu pokazuje, że większość komponentów została zaimplementowana w JavaScript, co widoczne jest w kluczowych plikach takich jak AlbumView.js, Gallery.js czy Comments.js. W projekcie wykorzystano nowoczesne funkcje języka JavaScript, które znacząco usprawniają proces programowania i zwiększają czytelność kodu.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=0.7\textwidth]{img/javaScriptPrzykladowyFragmentAsyncAwait.png}
+\caption{Uproszczony przykład wykorzystania async/await w obsłudze zdjęć}
+\label{fig:6}
+\end{figure}
+
+
+JavaScript w projekcie wykorzystywany jest w kilku głównych paradygmatach programowania:
+\begin{itemize}
+    \item Programowanie funkcyjne - widoczne w operacjach na kolekcjach zdjęć i albumów, gdzie wykorzystywane są metody takie jak map, filter, reduce.
+    \item Programowanie asynchroniczne - kluczowe w operacjach na bazie danych Firebase i przesyłaniu plików, zaimplementowane przy użyciu async/await.
+    \item Programowanie komponentowe - podstawa architektury React, gdzie każdy element interfejsu jest niezależnym, wielokrotnego użytku komponentem.
+    \item Programowanie zdarzeniowe - obsługa interakcji użytkownika poprzez system eventów.
+\end{itemize}
+
+Wybrane moduły projektu zostały zaimplementowane w TypeScript, co widoczne jest w plikach z rozszerzeniem .tsx i .ts. TypeScript został wykorzystany głównie w:
+\begin{itemize}
+    \item Komponentach infrastrukturalnych - np. ProtectedRoute.tsx, który odpowiada za zabezpieczenie routingu aplikacji.
+    \item Komponentach UI wymagających precyzyjnej definicji props - np. LoadingSpinner.tsx, gdzie TypeScript zapewnia bezpieczeństwo typów dla przekazywanych właściwości.
+    \item Definicjach typów - w pliku firebase.d.ts, gdzie zdefiniowane są interfejsy dla danych przechowywanych w Firebase.
+\end{itemize}
+
+Warto zauważyć, że JavaScript, mimo swoich zalet w postaci elastyczności i łatwości rozwoju, posiada pewne ograniczenia wynikające z dynamicznego typowania. W złożonych aplikacjach może to prowadzić do trudnych do wykrycia błędów w czasie wykonania. Z tego powodu w krytycznych miejscach aplikacji, gdzie precyzja typów jest szczególnie istotna, zastosowano TypeScript. Przykładem jest obsługa uploadu zdjęć i integracja z API Firebase, gdzie błędy typów mogłyby prowadzić do poważnych problemów w działaniu aplikacji.
+Połączenie JavaScript i TypeScript w projekcie pozwoliło na zachowanie równowagi między szybkością rozwoju a bezpieczeństwem kodu. JavaScript zapewnia elastyczność i szybkość implementacji, podczas gdy TypeScript dodaje warstwę bezpieczeństwa w krytycznych komponentach systemu
+
+
+
+\section{React - interfejs użytkownika}
+
+Interfejs użytkownika Internetowej Bazy Danych został zrealizowany przy użyciu biblioteki React, która stanowi podstawę warstwy prezentacji aplikacji. React, będący biblioteką JavaScript, a nie frameworkiem, pozwala na tworzenie interaktywnych interfejsów użytkownika poprzez komponenty wielokrotnego użytku - jednocześnie nie narzuca to sztywnych ram jak w przypadku konkurencyjnych rozwiązań takich jak Angular, będąc też dużo popularniejszym rozwiązaniem.
+
+Struktura projektu została zorganizowana zgodnie z najlepszymi praktykami React, co widoczne jest w podziale na katalogi:
+\begin{itemize}
+  \item /components - zawierający komponenty UI, takie jak AlbumView, Gallery, ImageEditor
+  \item /pages - grupujący główne widoki aplikacji
+  \item /hooks - przechowujący własne hooki React
+  \item /contexts - zawierający konteksty do zarządzania stanem
+  \item /services - grupujący usługi do komunikacji z Firebase
+\end{itemize}
+
+W projekcie wykorzystano nowoczesne podejście do tworzenia komponentów React, bazując głównie na komponentach funkcyjnych i hookach. Przykładem jest komponent AlbumView.js, który wykorzystuje:
+
+\begin{itemize}
+  \item Stan lokalny komponentów - zarządzany przez useState
+  \item Stan współdzielony - obsługiwany przez Context API
+  \item Stan serwerowy - synchronizowany z Firebase Firestore
+\end{itemize}
+
+Do stylizacji komponentów wykorzystano:
+\begin{itemize}
+  \item TailwindCSS - framework utility-first
+  \item Moduły CSS - dla stylów specyficznych dla komponentów
+  \item Dynamiczne style - dla interaktywnych elementów UI
+\end{itemize}
+
+W projekcie wykorzystano następujące kluczowe biblioteki:
+
+\begin{itemize}
+  \item \textbf{Biblioteki UI:}
+    \begin{itemize}
+      \item TailwindCSS - stylizacja komponentów
+      \item Shadcn/ui - gotowe komponenty UI
+      \item Radix UI - dostępne komponenty bazowe
+    \end{itemize}
+  \item \textbf{Biblioteki do zarządzania danymi:}
+    \begin{itemize}
+      \item Firebase SDK - integracja z backendem
+      \item JSZip - obsługa kompresji i pobierania albumów
+    \end{itemize}
+  \item \textbf{Biblioteki do obsługi mediów:}
+    \begin{itemize}
+      \item OptimizedImage - własny komponent do optymalizacji obrazów
+      \item ImageEditor - komponent do edycji zdjęć
+    \end{itemize}
+  \item \textbf{Biblioteki do routingu:}
+    \begin{itemize}
+      \item React Router - nawigacja w aplikacji
+    \end{itemize}
+\end{itemize}
+
+Projekt wykorzystuje również narzędzia deweloperskie:
+\begin{itemize}
+  \item ESLint - statyczna analiza kodu
+  \item Prettier - formatowanie kodu
+\end{itemize}
+
+Architektura komponentów została zaprojektowana modułowo, co widoczne jest w implementacji głównych funkcjonalności:
+\begin{itemize}
+  \item Zarządzanie albumami (AlbumView.js):
+  \item Wyświetlanie galerii (AlbumList.js):
+\end{itemize}
+
+Routing w aplikacji zaimplementowano przy użyciu React Router, co umożliwia płynną nawigację bez przeładowywania strony. Zastosowano również lazy loading komponentów dla optymalizacji wydajności.
+
+Warto podkreślić, że wybór React jako biblioteki do budowy interfejsu pozwolił na stworzenie wydajnej aplikacji z zaawansowanymi funkcjami, takimi jak:
+\begin{itemize}
+  \item Edycja zdjęć w czasie rzeczywistym
+  \item Zarządzanie watermarkami
+  \item System komentarzy
+  \item Zaawansowane animacje UI
+  \item Obsługa płatności
+\end{itemize}
+
+Projekt wykorzystuje nowoczesne funkcje JavaScript, co widoczne jest w implementacji asynchronicznego przetwarzania zdjęć i komunikacji z Firebase.
+
+\subsection{Stylizacja komponentów}
+W projekcie zastosowano hybrydowe podejście do stylizacji interfejsu użytkownika, które łączy zalety tradycyjnego CSS z nowoczesnymi rozwiązaniami utility-first CSS. Głównym filarem stylizacji są dedykowane pliki CSS, które można znaleźć w wielu komponentach projektu, takich jak AlbumView.css, Gallery.css czy Comments.css. Te pliki zawierają złożone definicje stylów, w tym zaawansowane animacje i efekty wizualne, które są kluczowe dla interaktywności galerii zdjęć. Przykładowo, w komponencie galerii zaimplementowano płynne animacje przejść między zdjęciami oraz efekty hover na miniaturkach, co znacząco poprawia doświadczenie użytkownika.
+
+Struktura CSS została zaprojektowana modułowo, gdzie każdy główny komponent posiada własny plik stylów. Takie podejście nie tylko ułatwia zarządzanie kodem, ale również pozwala na lepszą organizację i maintenance projektu. W plikach CSS zdefiniowano również własne zmienne, które zapewniają spójność kolorów, odstępów i innych właściwości wizualnych w całej aplikacji.
+
+Jako uzupełnienie tradycyjnego CSS, w projekcie wykorzystano również TailwindCSS, który służy głównie do szybkiej implementacji podstawowych stylów i zapewnienia responsywności interfejsu. Jest to szczególnie widoczne w komponentach, które wymagają prostych modyfikacji układu lub stylizacji, bez potrzeby tworzenia dedykowanych klas CSS. TailwindCSS okazał się szczególnie przydatny przy implementacji responsywnego grida galerii zdjęć oraz dostosowywaniu interfejsu do różnych rozmiarów ekranu.
+
+Trzecim elementem systemu stylizacji są style dynamiczne, generowane programistycznie w zależności od stanu aplikacji i interakcji użytkownika. Ten aspekt jest szczególnie widoczny w komponencie edytora zdjęć, gdzie style są modyfikowane w czasie rzeczywistym w odpowiedzi na działania użytkownika, takie jak zmiana parametrów edycji czy zastosowanie filtrów. Dynamiczne style są również wykorzystywane do animacji interfejsu, które reagują na przewijanie strony czy interakcje z myszką.
+
+Połączenie tych trzech podejść do stylizacji pozwoliło na stworzenie interfejsu, który jest nie tylko estetyczny i funkcjonalny, ale również wydajny i łatwy w utrzymaniu. Dedykowane pliki CSS obsługują złożone animacje i specyficzne style, podczas gdy TailwindCSS zapewnia szybką implementację podstawowych stylów i responsywności, a dynamiczne style dodają interaktywności i płynności interfejsu.
+
+Istotnym aspektem projektu jest jego pełna responsywność i dostosowanie do urządzeń mobilnych. Interfejs automatycznie adaptuje się do różnych rozmiarów ekranów, co zostało osiągnięte poprzez wykorzystanie elastycznego systemu grid oraz media queries. W przypadku galerii zdjęć, układ dynamicznie zmienia się z siatki wielu kolumn na widok pojedynczej kolumny na urządzeniach mobilnych. Dodatkowo, zaimplementowano specjalne interakcje dotykowe, co widoczne jest w komponencie AlbumList.js, gdzie dodano obsługę gestów dotykowych dla efektów hover na miniaturkach zdjęć:
+
+\begin{itemize}
+    \item Dostosowanie layoutu do różnych szerokości ekranu
+    \item Optymalizacja interakcji dotykowych dla urządzeń mobilnych
+    \item Automatyczne skalowanie obrazów w zależności od rozmiaru ekranu
+    \item Specjalne style i animacje przystosowane do interfejsów dotykowych
+\end{itemize}
+
+Responsywność została zaimplementowana z wykorzystaniem klas CSS oraz dynamicznych stylów JavaScript, które reagują na zmiany rozmiaru okna przeglądarki i orientacji urządzenia. Szczególną uwagę poświęcono wydajności na urządzeniach mobilnych, implementując lazy loading dla obrazów oraz optymalizując animacje interfejsu.
+
+
+% ********** Koniec rozdziału **********
+
+% ********** Rozdział ł **********
+\chapter{Projekt i realizacja}
+\label{sec:chapterł}
+
+\section{Wymagania funkcjonalne}
+W ramach projektu zaimplementowano szereg funkcjonalności, które można pogrupować w następujące kategorie:
+\subsection{Zarządzanie użytkownikami}
+\begin{itemize}
+\item Tworzenie użytkownika (rejestracja przez Google).
+\item Logowanie użytkownika (przez Google).
+\item Usuwanie użytkownika (poprzez panel administracyjny Firebase Console).
+\item Role użytkowników (administrator/autor/użytkownik).
+\end{itemize}
+
+\subsection{Zarządzanie albumami}
+\begin{itemize}
+\item Tworzenie albumu z wydarzeń.
+\item Dodawanie metadanych albumu (nazwa, lokalizacja, data wydarzenia).
+\item Ustawianie prywatności albumu (publiczny/prywatny).
+\item Ustawianie komercyjności albumu (publiczny/publiczny komercyjny).
+\item Usuwanie albumu.
+\end{itemize}
+
+\subsection{Zarządzanie zdjęciami}
+\begin{itemize}
+\item Dodawanie zdjęć do utworzonego albumu.
+\item Usuwanie zdjęć z albumu.
+\item Wybór wielu zdjęć (multi-select).
+\item Pobieranie wybranych zdjęć.
+\item Pobieranie całego albumu (jako ZIP).
+\item Podstawowa edycja zdjęć w czasie rzeczywistym.
+\item Edycja zdjęć z użyciem AI.
+\item Automatyczne generowanie miniatur.
+\end{itemize}
+
+\subsection{Wyszukiwanie i filtrowanie}
+\begin{itemize}
+\item Wyszukiwanie albumów za pomocą:
+\begin{itemize}
+\item Nazwy wydarzenia.
+\item Nazwy fotografa.
+\item Nazwy organizatora.
+\item Nazwy lokalizacji.
+\end{itemize}
+\item Domyślne wyświetlanie chronologicznie od najnowszych do najstarszych.
+\end{itemize}
+
+\subsection{Funkcje komercyjne}
+\begin{itemize}
+\item Oznaczanie albumów jako komercyjne.
+\item System płatności za zdjęcia.
+\item Zakup pojedynczych zdjęć.
+\item Zakup całego albumu.
+\item Pobieranie zakupionych zdjęć.
+\end{itemize}
+
+\subsection{Zabezpieczenia i znaki wodne}
+\begin{itemize}
+\item Automatyczne nakładanie znaków wodnych.
+\item Konfiguracja ustawień znaku wodnego.
+\end{itemize}
+
+\subsection{Interfejs użytkownika}
+\begin{itemize}
+\item Responsywny design (mobile/desktop).
+\item Animowane przejścia i efekty.
+\item System powiadomień dla użytkownika.
+\item Wskaźniki postępu dla operacji długotrwałych takich jak przetwarzanie AI.
+\end{itemize}
+
+\subsection{System komentarzy}
+\begin{itemize}
+\item Dodawanie komentarzy do albumów lub zdjęć.
+\item Dodawanie ocen do albumów lub zdjęć.
+\item Wyświetlanie komentarzy.
+\item Usuwanie komentarzy i ocen.
+\end{itemize}
+
+\subsection{Optymalizacja}
+\begin{itemize}
+\item Lazy loading dla zdjęć.
+\item Automatyczne generowanie miniatur o zmniejszonej rozdzielczości.
+\item Automatyczne generowanie okładek o zmniejszonej rozdzielczości.
+\item Buforowanie często używanych zasobów.
+\end{itemize}
+
+\subsection{Grupy użytkowników}
+\begin{itemize}
+\item Administrator.
+\item Autor - użytkownik będący właścicielem albumu.
+\item Użytkownik.
+\end{itemize}
+
+
+
+\section{Projekt architektury systemu}
+
+\subsection{Diagramy}
+Diagramy stanowią kluczowy element dokumentacji technicznej, umożliwiając wizualne przedstawienie złożonych aspektów systemu. Zostały zastosowane różne typy diagramów, które ułatwiają zrozumienie architektury i funkcjonowania aplikacji zarówno dla osób technicznych, jak i nietechnicznych. Diagramy uznano za niezbędne narzędzie w procesie projektowania i dokumentowania systemu, umożliwiające przejrzyste zobrazowanie relacji między komponentami oraz przepływu danych.
+
+\subsubsection{Diagram sekwencji}
+Autor zdecydował się zaprojektować diagram sekwencji, który przedstawia chronologiczny przebieg interakcji między komponentami systemu, pokazując sposób, w jaki użytkownik komunikuje się z różnymi częściami aplikacji do zarządzania galeriami zdjęć. W projekcie wyodrębniono główne sekcje, takie jak proces autoryzacji, tworzenie i zarządzanie albumami, upload oraz przetwarzanie zdjęć, w tym obsługę znaków wodnych, a także funkcje edycji i przetwarzania AI. Twórca zastosował pionowe linie życia reprezentujące czas działania poszczególnych komponentów, a poziome strzałki ilustrują przepływ komunikacji i danych między nimi. Uwzględniono również interakcje z bazami danych Firebase Storage i Firestore, ukazując pełny obieg informacji w systemie. Całość diagramu została zaprojektowana tak, aby umożliwić zrozumienie złożoności procesów oraz zależności czasowych między poszczególnymi operacjami. Utworzone zostały dwa warianty schematu - rozbudowany oraz uproszczony dla lepszej czytelności.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=1.0\textwidth]{img/uproszczonyUML-diagramSekwencji-v1.jpg}
+\caption{Diagram sekwencji uproszczony}
+\label{fig:7}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{img/rozbudowanyUML-diagramSekwencji-v1.png}
+\caption{Diagram sekwencji rozbudowany}
+\label{fig:8}
+\end{figure}
+
+
+\subsubsection{Diagram struktury danych w bazie}
+Autor zdecydował się zaprojektować diagram struktury danych, który przedstawia organizację nierelacyjnej bazy danych Firebase Firestore. Wykorzystano do tego elementy diagramu klas dla lepszej czytelności i zrozumienia powiązań między kolekcjami. W projekcie wyodrębniono główne kolekcje dokumentów, takie jak User, Album, Photo oraz powiązane z nimi podkolekcje, takie jak PhotoMetadata, Payment, AlbumShare i Comment, które reprezentują różne aspekty funkcjonalne systemu. Twórca zastosował notację przypominającą relacje między klasami, aby zobrazować logiczne powiązania między dokumentami, chociaż w rzeczywistości są one realizowane poprzez referencje ID w dokumentach Firestore. Uwzględniono również strukturę zagnieżdżonych obiektów i tablic, które są charakterystyczne dla baz nierelacyjnych, pokazując na przykład, jak metadane zdjęć (PhotoMetadata) czy historia edycji (editingHistory) są przechowywane jako zagnieżdżone obiekty w dokumentach Photo. Diagram został zaprojektowany w sposób umożliwiający łatwiejsze zrozumienie organizacji danych w systemie NoSQL, jednocześnie zachowując przejrzystość dla osób zaznajomionych z tradycyjnymi diagramami UML.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{img/diagramStrukturyDanychWBazie.png}
+\caption{Diagram strutury danych}
+\label{fig:9}
+\end{figure}
+
+\subsubsection{Diagram integracji komponentów}
+Autor zdecydował się stworzyć diagram integracji komponentów, aby zobrazować architekturę systemu galerii zdjęć z perspektywy współdziałających ze sobą modułów. W projekcie szczególną uwagę zwrócono na przedstawienie zależności między komponentami frontendowymi React, usługami Firebase oraz zewnętrznymi modułami przetwarzania obrazów. Twórca wyodrębnił w diagramie główne warstwy aplikacji, pokazując jak komponenty interfejsu użytkownika komunikują się z systemem zarządzania stanem, a następnie z usługami backendowymi. Diagram ten pozwolił autorowi na przejrzyste przedstawienie przepływu danych i zależności, co jest kluczowe dla zrozumienia architektury systemu.
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{img/diagramIntegracjiKomponentow-5.png}
+\caption{Diagram integracji komponentów}
+\label{fig:10}
+\end{figure}
+
+\section{Implementacja}
+W niniejszj sekcji autor umieścił fagmenty kodu źrodłowego. Część z umieszczonego kodu została uproszczona ze względu na edukacyjny charakter pracy i utrzymanie długości pracy w rozsądnym - według autora oraz zaleceń wydziałowych - wymiarze stron.
+
+\subsection{Warstwa Bazodanowa i Przetwarzanie - Backend}
+
+\subsubsection{Struktura Bazy Danych}
+
+W ramach implementacji systemu zastosowano nierelacyjną bazę danych Firebase Firestore. Zdefiniowano strukturę danych w postaci typów TypeScript, co zapewniło spójność danych w całej aplikacji. Główne typy danych zdefiniowano w pliku src/types/firebase.d.ts:
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\textwidth]{img/strukturaBazyDanych-2.png}
+\caption{Fragment struktura bazy danych}
+\label{fig:11}
+\end{figure}
+
+W celu optymalizacji wydajności zapytań, zaimplementowano indeksy złożone w pliku firestore.indexes.json:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{img/firestore-indexes.png}
+\caption{Fragment optymalizacji Firestore}
+\label{fig:11}
+\end{figure}
+
+Szczególną uwagę poświęcono implementacji mechanizmu watermarków, co odzwierciedlono w strukturze danych albumu:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{img/strukturaDanychWatermark.png}
+\caption{Struktura danych - watermark}
+\label{fig:11}
+\end{figure}
+
+Zaimplementowano również system śledzenia statusu przetwarzania zdjęć:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{img/systemSledzeniaStatusuPrzetwarzaniaZdjec.png}
+\caption{System śledzenia statusu}
+\label{fig:11}
+\end{figure}
+
+\subsubsection{Mechanizmy Przetwarzania}
+W ramach implementacji systemu zrealizowano zaawansowane mechanizmy przetwarzania obrazów, ze szczególnym uwzględnieniem obsługi znaków wodnych. Główną logikę przetwarzania zaimplementowano w komponencie OptimizedImage.js.
+
+System Zarządzania Znakami Wodnymi - zaimplementowano kompleksowy system zarządzania znakami wodnymi, który umożliwia dynamiczne nakładanie różnych typów zabezpieczeń na obrazy. System automatycznie przetwarza obrazy w tle, tworząc osobne wersje ze znakami wodnymi, które są przechowywane w dedykowanych folderach w Firebase Storage. Proces ten jest w pełni zautomatyzowany i monitorowany przez system śledzenia statusu przetwarzania.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{img/system-zarzadzania-WM.png}
+    \caption{System zarzązdania Watermark}
+\label{fig:11}
+\end{figure}
+
+Progresywne Ładowanie Obrazów - zaimplementowano dwuetapowy system ładowania obrazów, wykorzystujący technikę blur-load dla poprawy wrażeń użytkownika. System najpierw wyświetla zoptymalizowaną miniaturę, a następnie płynnie przechodzi do pełnej wersji obrazu, co znacząco poprawia postrzeganą wydajność aplikacji.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{img/lazyLoading.png}
+    \caption{Kod odpowiedzialny za lazy loading}
+\label{fig:11}
+\end{figure}
+
+Walidacja i Bezpieczeństwo - Wdrożono wielopoziomowy system walidacji plików, który obejmuje sprawdzanie typów MIME, limitów rozmiaru oraz metadanych obrazów. System ten jest zintegrowany zarówno z Firebase Storage, jak i Firestore, zapewniając spójną walidację na wszystkich poziomach aplikacji.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{img/walidacjaPlikowJPG.png}
+    \caption{Kod odpowiedzialny za walidację plików JPG}
+\label{fig:11}
+\end{figure}
+
+Optymalizacja Wydajności - Zaimplementowano system dynamicznego dostosowywania wymiarów obrazów, który automatycznie optymalizuje rozmiary w zależności od urządzenia i kontekstu wyświetlania. System wykorzystuje lazy loading w połączeniu z Intersection Observer API, co znacząco redukuje zużycie zasobów i przyspiesza ładowanie strony.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{img/optimizedImage-optymalizacja-js.png}
+    \caption{Kod odpowiedzialny za optymalizacje wielkości obrazów}
+\label{fig:11}
+\end{figure}
+
+
+
+\subsection{Warstwa Prezentacji - Frontend}
+
+\subsubsection{Logowanie i autoryzacja administratora}
+Zaimplementowano system autoryzacji oparty o Firebase Authentication, wykorzystujący logowanie przez konto Google oraz system ról użytkowników. W komponencie zaimplementowano mechanizm weryfikacji uprawnień administratora poprzez sprawdzanie specjalnej kolekcji settings/admin w bazie danych. System automatycznie przekierowuje użytkownika do odpowiedniego widoku na podstawie jego roli, zapewniając dostęp do funkcji administracyjnych tylko uprawnionym osobom.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{img/login-js-chap3.png}
+    \caption{Kod odpowiedzialny za logowanie}
+\label{fig:11}
+\end{figure}
+
+\subsubsection{Widok listy albumów z filtrowaniem prywatnych albumów}
+Komponent AlbumList implementuje widok siatki albumów z zaawansowanym systemem animacji dla znaczników prywatności oraz responsywnym układem kart albumów. System obsługuje zarówno interakcje myszką jak i dotykowe, wykorzystując efekty wizualne oparte na prędkości przewijania, a każda karta albumu zawiera szczegółowe informacje wraz ze znacznikiem prywatności. Komponent integruje się z OptimizedImage dla efektywnego ładowania miniatur.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{img/albumList-js.png}
+    \caption{Fragment kodu dotyczący lisowania albumów}
+\label{fig:11}
+\end{figure}
+
+
+\subsubsection{Formularz tworzenia albumu}
+Komponent CreateAlbum implementuje interaktywny formularz tworzenia albumów z zaawansowaną walidacją danych wejściowych. System obsługuje konfigurację parametrów albumu, w tym nazwę (3-100 znaków), lokalizację (do 100 znaków), datę wydarzenia, oraz ustawienia komercyjne i znaku wodnego. Implementacja zawiera automatyczne tworzenie struktury folderów w Firebase Storage dla każdego nowego albumu, z dedykowanymi przestrzeniami dla oryginalnych zdjęć, zdjęć ze znakiem wodnym i plików znaków wodnych.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{img/createAlbum-js.png}
+    \caption{Kod odpowiedzialny za formularz}
+\label{fig:11}
+\end{figure}
+
+\subsubsection{Widok Albumu i Przeglądarka Zdjęć}
+Komponent AlbumView implementuje zaawansowany system zarządzania albumem fotograficznym z obsługą zdjęć z watermarkami, edycją oraz systemem płatności. Komponent automatycznie weryfikuje i naprawia strukturę folderów w Firebase Storage, obsługuje różne tryby wyświetlania zdjęć (kwadratowy i naturalny) oraz implementuje system uprawnień rozróżniający autora albumu od zwykłych użytkowników. Integruje się z komponentami ImageEditor, PaymentProcess oraz Comments dla pełnej funkcjonalności albumu.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{img/albumView-js.png}
+    \caption{Kod odpowiedzialny za widok albumu}
+\label{fig:11}
+\end{figure}
+
+\subsubsection{Edytor zdjęć}
+Komponent ImageEditor implementuje zaawansowany system edycji zdjęć wykorzystujący Canvas API do manipulacji obrazem na poziomie pikseli. System obsługuje trzy podstawowe parametry edycji: jasność (brightness), kontrast (contrast) i nasycenie (saturation), z możliwością podglądu zmian w czasie rzeczywistym. Implementacja zawiera również integrację z algorytmami AI poprzez funkcje enhanceImage i detectObjects do poprawy jakości zdjęć i segmentacji obrazu.
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{img/imageEditor2-js.png}
+    \caption{Fragment kodu ImageEditor.js}
+\label{fig:11}
+\end{figure}
+
+\subsubsection{System płatności}
+Komponent PaymentProcess implementuje system obsługi płatności za zdjęcia z możliwością zakupu pojedynczych zdjęć lub całego albumu ze zniżką. System wykorzystuje stałe cenowe \textnormal{(PHOTO\_PRICE = 5 PLN, ALBUM\_DISCOUNT = 20\%)} i implementuje mechanizm symulacji płatności z zapisem transakcji w Firestore. Implementacja zawiera również system pobierania zakupionych zdjęć w formie archiwum ZIP.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{img/paymentProcess-js.png}
+    \caption{Fragment kodu systemu płatności}
+\label{fig:11}
+\end{figure}
+
+\subsubsection{System komentarzy i ocen}
+System komentarzy zaimplementowany został w komponencie Comments - umożliwia użytkownikom dodawanie komentarzy i ocen do albumów oraz pojedynczych zdjęć. Wykorzystuje bazę danych Firestore do przechowywania danych, a interfejs użytkownika zawiera system oceniania oparty na pięciu gwiazdkach. Komponent automatycznie oblicza średnią ocenę i zapobiega wielokrotnym ocenom przez tego samego użytkownika. Implementacja zawiera również walidację długości komentarza i system ładowania danych.
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{img/comments-js.png}
+    \caption{Kod odpowiedzialny za system komentarzy i ocen}
+\label{fig:11}
+\end{figure}
+
+
+
+\subsection{Interfejs pełnoekranowego podglądu zdjęć}
+Komponent ImageModal implementuje interfejs pełnoekranowego podglądu zdjęć z funkcjami nawigacji między obrazami za pomocą przycisków oraz klawiatury. Integruje on system komentarzy poprzez komponent Comments oraz zawiera mechanizm ochrony przed przypadkowym zamknięciem modalu podczas interakcji z komentarzami. Implementacja wykorzystuje hooki React do obsługi zdarzeń klawiatury, umożliwiając nawigację strzałkami i zamykanie klawiszem Escape.
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{img/imageModal-przegladarkaZdjec-js.png}
+    \caption{Kod odpowiedzialny za przeglądarkę zdjęć}
+\label{fig:11}
+\end{figure}
+
+\subsection{Kluczowe Zasady Bezpieczeństwa Firebase}
+\textnormal{Autentykacja: Większość operacji wymaga uwierzytelnienia użytkownika, co widać w podstawowej funkcji: function isAuthenticated() { return request.auth != null; }.\\
+Kontrola dostępu do albumów: Publiczny dostęp jest ograniczony do odczytu tylko dla zdjęć z watermarkiem, co potwierdza reguła: allow read: if subFolder in ['photo-original', 'photo-watermarked'];.\\
+Walidacja plików: Ścisła kontrola rozmiaru i typu plików: return request.resource.size <= 50 * 1024 * 1024 \&\& (request.resource.contentType == 'image/jpeg' \texttt{||} request.resource.contentType == 'image/jpg').\\
+Uprawnienia administratora: Specjalne uprawnienia dla admina są weryfikowane przez email: return isAuthenticated() \&\& request.auth.token.email == "kajuchu@gmail.com".\\
+Bezpieczeństwo komentarzy: \\
+Komentarze mogą być czytane przez wszystkich, ale modyfikowane tylko przez właściciela: \\
+allow create: \\
+if isAuthenticated() \&\& request.resource.data.userId == request.auth.uid.}
+
+
+
+
+
+% ********** Koniec rozdziału **********
+
+
+
+% ********** Rozdział 4 **********
+\chapter{Testy, wnioski i podsumowanie}
+\label{sec:chapter4}
+
+W tym rozdziale został zawarty zbiór tesetów, wnioski oraz podsumowanie. Dodatkowo zawarta została lista funkcjonalności rozwojowych.
+
+Rozdział  ten powinien zawierać podsumowanie prezentujące usprawnienia i korzyści, jakie wnosi praca, uwagi co do napotkanych problemów i sposobu ich rozwiązania. Należy również nakreślić możliwości ulepszenia w przyszłości prezentowanej pracy.
+
+\section{Testy manualne}
+Testowanie manualne stanowił fundamentalny element procesu weryfikacji jakości w projekcie. Skoncentrowany na sprawdzeniu interakcji użytkownika z systemem zarządzania zdjęciami. W ramach realizacji projektu, szczególną uwagę poświęcono testowaniu funkcjonalności związanych z obsługą albumów, przetwarzaniem znaków wodnych oraz systemem uprawnień, co pozwoliło na wczesne wykrycie potencjalnych problemów z interfejsem użytkownika. Proces testowania był prowadzony systematycznie po implementacji każdego kluczowego modułu, obejmując scenariusze użycia zarówno dla fotografów, jak i klientów końcowych. Wyniki przeprowadzonych testów manualnych przyczyniły się do znaczącej poprawy jakości interfejsu użytkownika oraz stabilności operacji na plikach graficznych, co bezpośrednio przełożyło się na zwiększenie niezawodności całego systemu.
+
+Poniżej autor umieścił wypunktowane poszczególne testy manualne oparte głównie na zrzutach ekranu, które potwierdziły prawidłowość działania konkretnych fragmetnów internetowej bazy danych.
+
+\subsection{Test manualny - logowanie i autoryzacja}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\textwidth]{img/logowanie-1.png}
+\caption{Panel logowania/rejestracji}
+\label{fig:9}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\textwidth]{img/logowanie2.png}
+\caption{Panel wyboru konta Google}
+\label{fig:9}
+\end{figure}
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\textwidth]{img/logowanie3.png}
+\caption{Weryfikacja roli - Panel administracyjny}
+\label{fig:9}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\textwidth]{img/logowanie4-user-wyszukiwarka.png}
+\caption{Weryfikacja roli - zwykły użytkownik}
+\label{fig:9}
+\end{figure}
+
+\subsection{Test manualny - wyszukiwanie, filtrowanie, sortowanie listy albumów}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\textwidth]{img/wyszukiwarka1.png}
+\caption{Filtrowanie po nazwie}
+\label{fig:9}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\textwidth]{img/wyszukiwarka2.png}
+\caption{Sortowanie listy domyślne}
+\label{fig:9}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\textwidth]{img/wysuzkiwarka3.png}
+\caption{Sortowanie listy w przeciwnej kolejności}
+\label{fig:9}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\textwidth]{img/wyszukiwarka4.png}
+\caption{Sortowanie po nazwie}
+\label{fig:9}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\textwidth]{img/wyszukiwarka5.png}
+\caption{Sortowanie po nazwie w odwrotnej kolejności}
+\label{fig:9}
+\end{figure}
+
+\subsection{Test manualny - tworzenie albumu}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\textwidth]{img/towrzenieAlbumu.png}
+\caption{Formularz tworzenia albumu - podstawowoy}
+\label{fig:9}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\textwidth]{img/tworzenieAlbumu2.png}
+\caption{Formularz tworzenia albumu - utworzono}
+\label{fig:9}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\textwidth]{img/tworzenieAlbumu3.png}
+\caption{Formularz tworzenia albumu - rozszerzony, pełny}
+\label{fig:9}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\textwidth]{img/tworzenieAlbumu4.png}
+\caption{Formularz tworzenia albumu - utworzono rozszerzony}
+\label{fig:9}
+\end{figure}
+
+\subsection{Test manualny - dodawanie zdjęcia}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\textwidth]{img/dodawanieDoAlbumu1.png}
+\caption{Wybór zdjęcia do albumu}
+\label{fig:9}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\textwidth]{img/dodawanieDoAlbumu2.png}
+\caption{Potwierdzenie wyboru zdjęcia}
+\label{fig:9}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\textwidth]{img/dodawanieDoAlbumu3.png}
+\caption{Alert potwierdzający dodanie, ładowanie zdjęcia w albumie }
+\label{fig:9}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\textwidth]{img/dodawanieDoAlbumu4.png}
+\caption{Zdjęcie przesłano poprawnie wraz z dodaniem znaku wodnego}
+\label{fig:9}
+\end{figure}
+
+\subsection{Test manualny - dodawanie komentarzy i ocen}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\textwidth]{img/komentarze.png}
+\caption{Komentarze pod zdjęciem}
+\label{fig:9}
+\end{figure}
+
+\subsection{Test manualny - responsywność}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\textwidth]{img/responsywnosc1.png}
+\caption{Przykład responsywności - lista albumów}
+\label{fig:9}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\textwidth]{img/responsywnosc2.png}
+\caption{Przykład responsywności - widok albumu}
+\label{fig:9}
+\end{figure}
+
+
+\subsection{Test manualny - motywy systemowe}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.3\textwidth]{img/motywJasny2.png}
+\caption{Systemowy motyw - jasny}
+\label{fig:9}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\textwidth]{img/motywJasny1.png}
+\caption{Przykład działania motywu - jasny}
+\label{fig:9}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.3\textwidth]{img/motywCiemny2.png}
+\caption{Systemowy motyw - ciemny}
+\label{fig:9}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\textwidth]{img/motywCiemny1.png}
+\caption{Przykład działania motywu - ciemny}
+\label{fig:9}
+\end{figure}
+
+
+
+\section{Wnioski}
+
+Zrealizowany projekt w pełni odpowiada na współczesne potrzeby rynku fotograficznego, łącząc funkcje zarządzania zdjęciami, edycji oraz komercjalizacji w jednym, spójnym rozwiązaniu.
+
+Wykorzystanie technologii Firebase jako backendu znacząco uprościło implementację, zapewniając jednocześnie wysoką skalowalność i bezpieczeństwo danych, co jest kluczowe w kontekście przechowywania i przetwarzania materiałów fotograficznych.
+
+Implementacja dwutorowego systemu edycji zdjęć (JavaScript + AI) okazała się skutecznym rozwiązaniem, oferującym zarówno szybkie podstawowe modyfikacje, jak i zaawansowane funkcje oparte na sztucznej inteligencji.
+
+System automatycznego znakowania wodnego skutecznie zabezpiecza prawa autorskie twórców, jednocześnie zachowując elastyczność w konfiguracji i stosowaniu różnych typów znaków wodnych.
+
+Responsywny interfejs użytkownika, zbudowany w oparciu o React i nowoczesne biblioteki UI, zapewnia intuicyjną obsługę aplikacji na różnych urządzeniach, co potwierdziły przeprowadzone testy manualne.
+
+\section{Podsumowanie}
+
+\begin{tabular}{|p{7cm}|p{7cm}|}
+\hline
+\textbf{Zrealizowane funkcjonalności} & \textbf{Potencjalne kierunki rozwoju} \\
+\hline
+1. System zarządzania albumami z zaawansowaną kategoryzacją i filtrowaniem & 1. Implementacja zaawansowanych algorytmów AI do automatycznej kategoryzacji i tagowania zdjęć \\
+\hline
+2. Dwutorowy system edycji zdjęć (JavaScript + AI) z funkcją cofania zmian & 2. Rozbudowa systemu o funkcje społecznościowe (udostępnianie, grupy, wydarzenia) \\
+\hline
+3. Automatyczny system znaków wodnych z konfigurowalnymi parametrami & 3. Integracja z popularnymi platformami e-commerce i systemami płatności \\
+\hline
+4. System komentarzy i ocen z mechanizmem moderacji & 4. Dodanie funkcji automatycznego retuszu i korekty kolorów w oparciu o uczenie maszynowe \\
+\hline
+5. Responsywny interfejs z obsługą motywów jasnego i ciemnego & 5. Implementacja systemu subskrypcji i planów cenowych dla fotografów \\
+\hline
+\end{tabular}
+
+Projekt internetowej bazy danych do zarządzania galeriami zdjęć został zrealizowany zgodnie z założeniami, dostarczając kompleksowe narzędzie dla fotografów i ich klientów. Szczególną uwagę poświęcono aspektom bezpieczeństwa i wydajności, co zaowocowało stabilnym i skalowalnym rozwiązaniem. Zaimplementowane funkcje AI i zaawansowanej edycji zdjęć wyróżniają aplikację na tle konkurencyjnych rozwiązań, jednocześnie pozostawiając przestrzeń do dalszego rozwoju w kierunku automatyzacji procesów i rozbudowy funkcji społecznościowych.
+
+% ********** Koniec rozdziału **********
+
+\subsubsection{Przetwarzanie zdjęć z wykorzystaniem AI}
+W projekcie zaimplementowano zaawansowany system przetwarzania zdjęć wykorzystujący modele sztucznej inteligencji. System ten bazuje na bibliotece TensorFlow.js oraz modelu ESRGAN do poprawy jakości obrazów. Implementacja obejmuje zarówno przetwarzanie po stronie klienta, jak i wsparcie serwerowe poprzez Firebase Functions. Szczególnie istotnym elementem jest mechanizm automatycznego wykrywania obiektów na zdjęciach z wykorzystaniem modelu COCO-SSD, co umożliwia inteligentną segmentację i kategoryzację zawartości zdjęć.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{img/processImage-js.png}
+\caption{Fragment kodu odpowiedzialnego za przetwarzanie AI}
+\label{fig:12}
+\end{figure}
+
+Kluczowym elementem systemu jest funkcja processImage, która wykonuje następujące operacje:
+\begin{itemize}
+    \item Inicjalizacja modelu AI i przygotowanie obrazu do przetworzenia
+    \item Wykrywanie obiektów na zdjęciu z wykorzystaniem COCO-SSD
+    \item Poprawa jakości obrazu z użyciem algorytmów deep learning
+    \item Zapisywanie metadanych o wykrytych obiektach w bazie Firestore
+    \item Generowanie zoptymalizowanej wersji zdjęcia
+\end{itemize}
