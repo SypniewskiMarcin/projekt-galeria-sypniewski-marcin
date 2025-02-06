@@ -1,0 +1,16 @@
+node_modules/
+*.local
++ .env
++ .env.*
++ *.log
++ .runtimeconfig.json
++ lib/
++ coverage/
++ .nyc_output/
++ *.cache
++ .firebase/
++ firebase-debug.log
++ database-debug.log
++ firestore-debug.log
++ ui-debug.log
++ .DS_Store

@@ -1,0 +1,114 @@
+.editing-tools {
+    padding: 1rem;
+    background: #1a1a1a;
+    border-radius: 8px;
+    color: #fff;
+}
+
+.ai-enhancement-section {
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+}
+
+.ai-enhance-button {
+    width: 100%;
+    padding: 0.75rem;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ai-enhance-button:hover:not(:disabled) {
+    background: #2563eb;
+}
+
+.ai-enhance-button:disabled {
+    background: #6b7280;
+    cursor: not-allowed;
+}
+
+.ai-enhance-button.processing {
+    background: #6b7280;
+    cursor: not-allowed;
+}
+
+.processing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    color: #9ca3af;
+}
+
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.tool-group {
+    margin-bottom: 1rem;
+}
+
+.tool-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    color: #e5e7eb;
+}
+
+.tool-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.tool-controls input[type="range"] {
+    flex: 1;
+    height: 4px;
+    -webkit-appearance: none;
+    background: #4b5563;
+    border-radius: 2px;
+    outline: none;
+}
+
+.tool-controls input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #3b82f6;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tool-controls input[type="range"]::-webkit-slider-thumb:hover {
+    background: #2563eb;
+    transform: scale(1.1);
+}
+
+.tool-value {
+    min-width: 3rem;
+    text-align: right;
+    font-size: 0.875rem;
+    color: #9ca3af;
+}
