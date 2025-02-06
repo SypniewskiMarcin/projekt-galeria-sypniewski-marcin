@@ -11,7 +11,6 @@ import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
 import AlbumView from './AlbumView'; // Importuj komponent AlbumView
 import OptimizedImage from './OptimizedImage';
 import AlbumList from './AlbumList';
-import BusinessCard from './BusinessCard';
 
 function Gallery({ user, onStartEditing }) {
     const [selectedImageIndex, setSelectedImageIndex] = useState(null);
@@ -30,7 +29,6 @@ function Gallery({ user, onStartEditing }) {
     const [selectedImages, setSelectedImages] = useState([]);
     const formRef = useRef(null);
     const containerRef = useRef(null);
-    const [isBusinessCardVisible, setIsBusinessCardVisible] = useState(false);
 
     const categories = [
         'all',
@@ -73,10 +71,10 @@ function Gallery({ user, onStartEditing }) {
             let allAlbums = publicSnapshot.docs.map(doc => {
                 const albumData = doc.data();
                 console.log('Przetwarzanie albumu:', albumData.name);
-
+                
                 // Sprawdź czy album ma zdjęcia i ustaw okładkę
-                const coverPhoto = albumData.photos && albumData.photos.length > 0
-                    ? albumData.photos[0].url
+                const coverPhoto = albumData.photos && albumData.photos.length > 0 
+                    ? albumData.photos[0].url 
                     : null;
 
                 if (coverPhoto) {
@@ -101,10 +99,10 @@ function Gallery({ user, onStartEditing }) {
                 const privateSnapshot = await getDocs(privateQuery);
                 const privateAlbums = privateSnapshot.docs.map(doc => {
                     const albumData = doc.data();
-                    const coverPhoto = albumData.photos && albumData.photos.length > 0
-                        ? albumData.photos[0].url
+                    const coverPhoto = albumData.photos && albumData.photos.length > 0 
+                        ? albumData.photos[0].url 
                         : null;
-
+                    
                     return {
                         id: doc.id,
                         ...albumData,
@@ -125,7 +123,7 @@ function Gallery({ user, onStartEditing }) {
 
             // Filtrowanie
             if (selectedCategory !== 'all') {
-                allAlbums = allAlbums.filter(album =>
+                allAlbums = allAlbums.filter(album => 
                     album.categories?.includes(selectedCategory)
                 );
             }
@@ -243,8 +241,8 @@ function Gallery({ user, onStartEditing }) {
     return (
         <main>
             {selectedAlbumId ? (
-                <AlbumView
-                    albumId={selectedAlbumId}
+                <AlbumView 
+                    albumId={selectedAlbumId} 
                     onBack={() => setSelectedAlbumId(null)}
                 />
             ) : (
@@ -255,15 +253,15 @@ function Gallery({ user, onStartEditing }) {
                             onClick={() => setIsCreateAlbumVisible(!isCreateAlbumVisible)}
                         >
                             <span className="button-content">
-                                <svg
-                                    className="add-album-icon"
-                                    width="24"
-                                    height="24"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
+                                <svg 
+                                    className="add-album-icon" 
+                                    width="24" 
+                                    height="24" 
+                                    viewBox="0 0 24 24" 
+                                    fill="none" 
+                                    stroke="currentColor" 
+                                    strokeWidth="2" 
+                                    strokeLinecap="round" 
                                     strokeLinejoin="round"
                                 >
                                     <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
@@ -274,49 +272,18 @@ function Gallery({ user, onStartEditing }) {
                                 <div className="button-shine"></div>
                             </span>
                         </button>
-
-                        <button
-                            className="business-card-button"
-                            onClick={() => setIsBusinessCardVisible(!isBusinessCardVisible)}
-                        >
-                            <span className="button-content">
-                                <svg
-                                    className="business-card-icon"
-                                    width="24"
-                                    height="24"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                >
-                                    <rect x="2" y="4" width="20" height="16" rx="2" />
-                                    <line x1="2" y1="10" x2="22" y2="10" />
-                                </svg>
-                                <span className="button-text">Szukasz fotografa?</span>
-                                <div className="button-shine"></div>
-                            </span>
-                        </button>
                     </div>
 
-                    <div
+                    <div 
                         ref={containerRef}
-                        className={`gallery-container ${isCreateAlbumVisible || isBusinessCardVisible ? 'form-open' : ''}`}
+                        className={`gallery-container ${isCreateAlbumVisible ? 'form-open' : ''}`}
                     >
                         {isCreateAlbumVisible && (
-                            <CreateAlbum
+                            <CreateAlbum 
                                 ref={formRef}
-                                user={user}
+                                user={user} 
                                 onClose={() => setIsCreateAlbumVisible(false)}
                                 onAlbumCreated={handleAlbumCreated}
-                            />
-                        )}
-
-                        {isBusinessCardVisible && (
-                            <BusinessCard
-                                ref={formRef}
-                                onClose={() => setIsBusinessCardVisible(false)}
                             />
                         )}
 

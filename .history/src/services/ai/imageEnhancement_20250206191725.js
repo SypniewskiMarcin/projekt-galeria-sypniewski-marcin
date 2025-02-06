@@ -198,8 +198,7 @@ export const enhanceImage = async (imageElement) => {
         const response = await fetch(functionUrl, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'image/jpeg'
+                'Content-Type': 'application/json'
             },
             mode: 'cors',
             body: JSON.stringify({

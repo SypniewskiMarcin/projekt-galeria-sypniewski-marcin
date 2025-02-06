@@ -11,8 +11,8 @@
  * - cors: do obsługi Cross-Origin Resource Sharing
  * - tensorflow: do przetwarzania AI
  */
-const {onRequest} = require("firebase-functions/v2/https");
-const {setGlobalOptions} = require("firebase-functions/v2");
+const { onRequest } = require("firebase-functions/v2/https");
+const { setGlobalOptions } = require("firebase-functions/v2");
 const functions = require("firebase-functions");
 const logger = functions.logger;
 const sharp = require("sharp");
@@ -57,7 +57,7 @@ const loadEsrganModel = async () => {
   if (!esrganModel) {
     try {
       logger.info("Ładowanie modelu ESRGAN z:", ESRGAN_MODEL_URL);
-      esrganModel = await tf.loadGraphModel(ESRGAN_MODEL_URL, {fromTFHub: true});
+      esrganModel = await tf.loadGraphModel(ESRGAN_MODEL_URL, { fromTFHub: true });
       logger.info("Model ESRGAN załadowany pomyślnie");
     } catch (error) {
       logger.error("Błąd ładowania modelu ESRGAN:", error);
@@ -413,7 +413,7 @@ exports.processWatermarkHttp = onRequest({
         });
       }
 
-      const {filePath, albumId, watermarkSettings, metadata} = request.body;
+      const { filePath, albumId, watermarkSettings, metadata } = request.body;
       logger.info("5. Dane wejściowe po walidacji:", {
         filePath,
         albumId,
@@ -543,7 +543,7 @@ exports.processWatermarkHttp = onRequest({
             fileName,
           });
 
-          await bucket.file(filePath).download({destination: tempFilePath});
+          await bucket.file(filePath).download({ destination: tempFilePath });
           logger.info("Plik pobrany pomyślnie");
           logMemoryUsage("Po pobraniu pliku");
 
@@ -581,7 +581,7 @@ exports.processWatermarkHttp = onRequest({
             );
             if (watermarkFile) {
               const watermarkTempPath = path.join(os.tmpdir(), "watermark.png");
-              await watermarkFile.download({destination: watermarkTempPath});
+              await watermarkFile.download({ destination: watermarkTempPath });
               const originalMetadata = await sharp(tempFilePath).metadata();
               watermarkBuffer = await sharp(watermarkTempPath)
                 .resize(Math.floor(originalMetadata.width * 0.8), null, {
@@ -724,7 +724,7 @@ exports.createAlbumStructure = onRequest((request, response) => {
         return response.status(405).send("Method Not Allowed");
       }
 
-      const {albumId, watermarkSettings} = request.body;
+      const { albumId, watermarkSettings } = request.body;
 
       if (!albumId) {
         return response.status(400).send("Missing albumId");
@@ -805,7 +805,7 @@ exports.retryWatermarkProcessing = onRequest((request, response) => {
         return response.status(405).send("Method Not Allowed");
       }
 
-      const {albumId, fileName} = request.body;
+      const { albumId, fileName } = request.body;
       if (!albumId || !fileName) {
         return response.status(400).send("Missing required parameters");
       }
@@ -829,7 +829,7 @@ exports.retryWatermarkProcessing = onRequest((request, response) => {
       // Emulacja eventu Storage
       await exports.processWatermarkHttp(request, response);
 
-      response.json({success: true, message: "Watermark processing queued"});
+      response.json({ success: true, message: "Watermark processing queued" });
     } catch (error) {
       logger.error("Error in retryWatermarkProcessing:", error);
       response.status(500).send(error.message);
@@ -874,7 +874,7 @@ exports.processImage = onRequest({
       return response.status(405).send("Method Not Allowed");
     }
 
-    const {imageUrl, albumId} = request.body;
+    const { imageUrl, albumId } = request.body;
     if (!imageUrl || !albumId) {
       return response.status(400).send("Missing required parameters");
     }
@@ -994,7 +994,7 @@ exports.updateAlbumFolders = onRequest((request, response) => {
         return response.status(405).send("Method Not Allowed");
       }
 
-      const {albumId} = request.body;
+      const { albumId } = request.body;
       if (!albumId) {
         return response.status(400).send("Missing albumId");
       }
@@ -1032,29 +1032,63 @@ exports.updateAlbumFolders = onRequest((request, response) => {
  */
 exports.enhanceImage = onRequest({
   cors: {
-    origin: "*",
-    methods: ["POST", "OPTIONS"],
-    allowedHeaders: ["Content-Type"],
+    origin: [
+      "https://sypniewskimarcin.github.io",
+      "http://localhost:3000",
+    ],
+    methods: ["POST", "OPTIONS", "GET"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "Accept",
+      "Origin",
+      "X-Requested-With",
+    ],
+    credentials: true,
+    maxAge: 3600,
   },
   enforceAppCheck: false,
   timeoutSeconds: 540,
   memory: "2048MB",
+  minInstances: 0,
+  maxInstances: 100,
+  invoker: "public",
 }, async (request, response) => {
   try {
-    // Obsługa OPTIONS
+    // Obsługa żądania OPTIONS (preflight)
     if (request.method === "OPTIONS") {
-      response.set("Access-Control-Allow-Origin", "*");
-      response.set("Access-Control-Allow-Methods", "POST, OPTIONS");
-      response.set("Access-Control-Allow-Headers", "Content-Type");
+      const origin = request.headers.origin;
+      if (origin === "https://sypniewskimarcin.github.io" || origin === "http://localhost:3000") {
+        response.set("Access-Control-Allow-Origin", origin);
+        response.set("Access-Control-Allow-Methods", "POST, OPTIONS, GET");
+        response.set("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept, Origin, X-Requested-With");
+        response.set("Access-Control-Allow-Credentials", "true");
+        response.set("Access-Control-Max-Age", "3600");
+      }
       response.status(204).send("");
       return;
     }
 
-    if (request.method !== "POST") {
-      return response.status(405).json({error: "Method not allowed"});
+    // Ustaw nagłówki CORS dla wszystkich odpowiedzi
+    const origin = request.headers.origin;
+    if (origin === "https://sypniewskimarcin.github.io" || origin === "http://localhost:3000") {
+      response.set("Access-Control-Allow-Origin", origin);
+      response.set("Access-Control-Allow-Methods", "POST, OPTIONS, GET");
+      response.set("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept, Origin, X-Requested-With");
+      response.set("Access-Control-Allow-Credentials", "true");
     }
 
-    const {imageUrl} = request.body;
+    if (request.method !== "POST") {
+      return response.status(405).json({ error: "Method not allowed" });
+    }
+
+    logger.info("Otrzymano żądanie ulepszenia obrazu:", {
+      headers: request.headers,
+      origin: request.headers.origin,
+      method: request.method,
+    });
+
+    const { imageUrl } = request.body;
     if (!imageUrl) {
       return response.status(400).json({
         error: "Bad Request",
@@ -1095,10 +1129,6 @@ exports.enhanceImage = onRequest({
 
     // Dodatkowe przetwarzanie przez sharp
     const finalImage = await sharp(enhancedImage)
-      .jpeg({
-        quality: 100,
-        chromaSubsampling: "4:4:4",
-      })
       .sharpen({
         sigma: 1.5,
         m1: 1.5,
@@ -1107,10 +1137,18 @@ exports.enhanceImage = onRequest({
         y2: 10.0,
         y3: 20.0,
       })
+      .png({
+        quality: 100,
+        compression: 9,
+      })
       .toBuffer();
 
-    response.set("Access-Control-Allow-Origin", "*");
-    response.set("Content-Type", "image/jpeg");
+    // Ustaw nagłówki CORS i odpowiedź
+    response.set("Access-Control-Allow-Origin", request.headers.origin || "*");
+    response.set("Access-Control-Allow-Credentials", "true");
+    response.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    response.set("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept, Origin, X-Requested-With");
+    response.set("Content-Type", "image/png");
     response.send(finalImage);
   } catch (error) {
     logger.error("Błąd podczas przetwarzania:", error);
